@@ -1,6 +1,6 @@
 # Live GUI motor control
-# control the motor and keep track of motor step position
-#
+# (c) 2023 Theia Technologies LLC
+# contact Mark Peterson at mpeterson@theiatech.com for more information
 
 import PySimpleGUI as sg
 import logging as log
@@ -13,13 +13,21 @@ revision = "v.1.3.0"
 
 # global variable
 MCR = None
+TheiaLogoImagePath = r'C:\Users\mpete\OneDrive - Theia Technologies\Documents\Python\Calibrated_lens_customer_software\Theia_lens_GUI\Theia_logo.png'
+TheiaMenuIcon = r'C:\Users\mpete\OneDrive - Theia Technologies\Documents\Python\Calibrated_lens_customer_software\Theia_lens_GUI\TL1250P.ico'
+TheiaColorTheme = 'Default' #'LightBlue2'
 
 def app():
     # logging setup
     log.basicConfig(level=log.DEBUG, format='%(levelname)-7s ln:%(lineno)-4d %(module)-18s  %(message)s')
 
     # initialization
-    lensFamiliesList = ["TW50", "TW60", "TW80", "TW90"]
+    lensFamiliesList = [
+        'TL1250P N#',
+        'TL1250P R#',
+        'TL936P R#',
+        'TL410P R#'
+    ]
     settingsFileName = 'Motor control config.json'
     MCRInitialized = False
 
@@ -27,13 +35,16 @@ def app():
     # find the settings file
     def readSettingsFile():
         homeDir = os.path.expanduser("~")
-        settingsFullFileName = "{}\\{}".format(homeDir, settingsFileName)
+        appDir = os.path.join(homeDir, 'AppData', 'Local', 'TheiaLensGUI')
+        if not os.path.exists(appDir):
+            os.mkdir(appDir)
+        settingsFullFileName = f'{appDir}\\{settingsFileName}'
         if not os.path.exists(settingsFullFileName):
             log.info(f'New settings file created {settingsFullFileName}')
-            settings = sg.UserSettings(filename=settingsFileName, path=homeDir)
+            settings = sg.UserSettings(filename=settingsFileName, path=appDir)
             settings['comPort'] = ''
             settings['lastLensFamily'] = ''
-        settings = sg.UserSettings(filename=settingsFileName, path=homeDir)
+        settings = sg.UserSettings(filename=settingsFileName, path=appDir)
         return settings
 
     # enbleLiveFrame
@@ -96,19 +107,21 @@ def app():
         return portList
     
     # setup lens parameters
-    # input: fam: TW family number (TW60)
+    # input: fam: family string ('TL1250P N# family', etc)
     # return: lensConfig = [zoom steps, zoom PI, focus steps, focus PI, iris steps]
     def selectLens(fam:str) -> tuple[int]:
-        log.info(f"Select lens family {fam}")
+        log.info(f"Select {fam}")
         lensConfig = []
-        if "50" in fam:
+        if "410P R" in fam:
             lensConfig = [4073, 154, 9353, 8652, 75]
-        elif "60" in fam:
+        elif "1250P R" in fam:
             lensConfig = [3256, 3147, 8466, 8031, 75]
-        elif "80" in fam:
+        elif "410P N" in fam:
             lensConfig = [4017, 136, 9269, 8574, 75]
-        elif "90" in fam:
+        elif "1250P N" in fam:
             lensConfig = [3227, 3119, 8390, 7959, 75]
+        elif "936" in fam:
+            lensConfig = [2994, 2958, 5180, 5128, 75]
         return lensConfig
         
     # initialize motor controller
@@ -150,7 +163,9 @@ def app():
     # create the GUI window for the main window.  This can be re-created based on selected language
     # There is a live motor control section, measurement section, settings section, and optional monitor section when the test is running 
     # return: handle to the window
-    def mainGUILayout():        
+    def mainGUILayout():       
+        sg.theme(TheiaColorTheme) 
+        sg.set_global_icon(TheiaMenuIcon)
         # footer frame
         footerFrame = [
             [sg.Text(revision, size=(12,1), font='Helvetica 8'),
@@ -161,20 +176,26 @@ def app():
         # Live lens motor control section
         # lens family sub-frame
         lensFamFrame = [
-            [sg.Text('Lens family', size=(18,1)), sg.Combo(sorted(lensFamiliesList), default_value=lastLensFamily, size=(25,1), enable_events=True, key='cp_lensFam'), 
-                sg.Text('', size=(8,1)), sg.Checkbox('Backlash', default=True, key='cp_backlash', change_submits=True)]
+            [sg.Text('Lens family', size=(10,1)), sg.Combo(sorted(lensFamiliesList), default_value=lastLensFamily, size=(15,1), enable_events=True, key='cp_lensFam'), 
+                sg.Text('', size=(3,1)), sg.Checkbox('Backlash', default=True, key='cp_backlash', change_submits=True)]
             ]
         # comPort selection sub-frame
         comPortFrame = [
-            [sg.Text('Com port', size=(18,1)), sg.Combo(sorted(comPortList), default_value=comPort, size=(25,1), enable_events=True, key="cp_port"), 
-                sg.Text('', size=(8,1)), sg.Checkbox('Regard limits', default=True, key='cp_limitCheck', change_submits=True)]
+            [sg.Text('Com port', size=(10,1)), sg.Combo(sorted(comPortList), default_value=comPort, size=(15,1), enable_events=True, key="cp_port"), 
+                sg.Text('', size=(3,1)), sg.Checkbox('Regard limits', default=True, key='cp_limitCheck', change_submits=True)]
             ]
         # initialize motor control sub-frame
         initMotorsFrame = [
-            [sg.Button('Initialize motors', size=(12,1), key='motorInitBtn'), 
-                sg.Button('Initialize and home motors', size=(20,1), key='motorInitHomeBtn'),
-                sg.Button('Quit', size=(12,1), key="exitBtn")]
+            [sg.Button('Initialize and home motors', size=(20,1), key='motorInitHomeBtn'),
+                sg.Button('Initialize motors', size=(12,1), key='motorInitBtn')]
             ]
+        # lens header including picture and setup functions
+        headerFrame = [
+            [sg.Column(lensFamFrame)],
+            [sg.Column(comPortFrame)],
+            [sg.Column(initMotorsFrame, element_justification='center', expand_x=True)]
+            ]
+
         # motor control sub-frames
         relMoveFrame = [
             [sg.Button('Tele', size=(12,1), key='moveTeleBtn'), sg.Input('1000', size=(12,1), justification='center', disabled_readonly_background_color='LightGray', key='zoomStepFld'), 
@@ -195,11 +216,9 @@ def app():
             [sg.Button('Iris', size=(12,1), key='moveIrisAbsBtn', disabled=True)],
             ]
         liveControlFrame = [
-            [sg.Column(lensFamFrame)],
-            [sg.Column(comPortFrame)],
+            [sg.Image(TheiaLogoImagePath), sg.Column(headerFrame)],
             [sg.Frame('Relative move', relMoveFrame), sg.Frame('Current', curPosFrame), sg.Frame('Absolute move', absMoveFrame)],
-            [sg.Column(initMotorsFrame, element_justification='center', expand_x=True)],
-            [sg.Column(footerFrame)]
+            [sg.Column(footerFrame), sg.Push(), sg.Button('Quit', size=(12,1), key="exitBtn")]
             ]
                     
         # overall layout
@@ -218,7 +237,7 @@ def app():
         comPort = ''
 
     # default lens setup
-    lastLensFamily = settings.get('lastLensFamily', 'TW60')
+    lastLensFamily = settings.get('lastLensFamily', 'TL1250P N#')
     selectLens(lastLensFamily)
 
     window = mainGUILayout()
