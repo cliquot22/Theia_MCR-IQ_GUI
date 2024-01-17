@@ -7,19 +7,33 @@ import logging as log
 import TheiaMCR
 import serial.tools.list_ports
 import os
+import sys
 
 # revision
 revision = "v.1.3.0"
 
 # global variable
 MCR = None
-TheiaLogoImagePath = r'C:\Users\mpete\OneDrive - Theia Technologies\Documents\Python\Calibrated_lens_customer_software\Theia_lens_GUI\Theia_logo.png'
-TheiaMenuIcon = r'C:\Users\mpete\OneDrive - Theia Technologies\Documents\Python\Calibrated_lens_customer_software\Theia_lens_GUI\TL1250P.ico'
-TheiaColorTheme = 'Default' #'LightBlue2'
 
 def app():
     # logging setup
     log.basicConfig(level=log.DEBUG, format='%(levelname)-7s ln:%(lineno)-4d %(module)-18s  %(message)s')
+    
+    # Find file paths based on development or deployment.  
+    def resourcePath(resource):
+        '''
+        Set the base path of the exe or development folder
+        ### input
+        - resource: the resource path to find the path to
+        ### return
+        [basePath/resourceName]
+        '''
+        # Get absolute path to resource, works for dev and for PyInstaller
+        base_path = os.path.dirname(sys.executable)
+        if not os.path.exists(os.path.join(base_path, "data")):  # Check for data folder only available with exe file
+            # use development path
+            base_path = os.path.dirname(os.path.abspath(__file__))
+        return os.path.join(base_path, resource)
 
     # initialization
     lensFamiliesList = [
@@ -30,10 +44,18 @@ def app():
     ]
     settingsFileName = 'Motor control config.json'
     MCRInitialized = False
+    
+    TheiaLogoImagePath = resourcePath('data/Theia_logo.png')
+    TheiaMenuIcon = resourcePath('data/TL1250P.ico')
+    TheiaColorTheme = 'DefaultNoMoreNagging' #'LightBlue2'
 
     # read the saved settings file
     # find the settings file
     def readSettingsFile():
+        '''
+        Read the PySimpleGUI settings file. 
+        Create a file in the AppData/Local folders if it doesn't exist. 
+        '''
         homeDir = os.path.expanduser("~")
         appDir = os.path.join(homeDir, 'AppData', 'Local', 'TheiaLensGUI')
         if not os.path.exists(appDir):
@@ -48,10 +70,14 @@ def app():
         return settings
 
     # enbleLiveFrame
-    # enable or disable the buttons and input in the live frame
-    # input: enable (bool)
-    # return: live input enabled (bool)
     def enableLiveFrame(enable:bool=True) -> bool:
+        '''
+        Enable buttons and inputs in the live frame. 
+        ### input
+        - enable (bool): state
+        ### return
+        [enabled value]
+        '''
         componentList = ['moveTeleBtn', 'moveWideBtn', 'moveNearBtn', 'moveFarBtn', 'moveOpenBtn', 'moveCloseBtn', \
             'moveZoomAbsBtn', 'moveFocusAbsBtn', 'moveIrisAbsBtn', \
             'zoomCurFld', 'focusCurFld', 'irisCurFld', 'zoomStepFld', 'focusStepFld', 'irisStepFld']
@@ -60,33 +86,50 @@ def app():
         return not enable
     
     # enableLiveFrameAbs
-    # enable or disable the absolute movement buttons
-    # input: enable (bool)
-    # return: enable
     def enableLiveFrameAbs(enable:bool=True) -> bool:
+        '''
+        Enable buttons and inputs for absolute movements. 
+        ### input
+        - enable (bool): state
+        ### return
+        [enabled value]
+        '''
         componentList = ['moveZoomAbsBtn', 'moveFocusAbsBtn', 'moveIrisAbsBtn']
         for component in componentList:
             window[component].update(disabled = not enable)
         return not enable
     
     # set the regard limits flag in MCR module
-    # limit steps to avoid hitting the hard stop
-    # this setting is stored in the MCRControl.py variables (not local)
-    # input: state
     def setRegardLimits(state:bool=True):
+        '''
+        Set the regard limits flag in MCR module. 
+        Limit steps to avoid going past the hard stop.  
+        This setting is stored in the MCRControl.py variables (not local)
+        ### input: 
+        - state: the regard setting
+        '''
         MCR.focus.setRespectLimits(state)
         MCR.zoom.setRespectLimits(state)
         enableLiveFrameAbs(state)
 
     # set the backlash flag in MCR move relative commands
-    # input: state
     def setRegardBacklash(state:bool=True) -> bool:
+        '''
+        Set the backalsh flag in the MCR move relative command.   
+        *This function is not active*
+        ### input
+        - state: the regard setting (not used)
+        '''
         return state
     
     # set current step number
-    # read and set the current step for focus, zoom, and/or iris motors
-    # input: motor ("focus", "zoom", "iris", None (all)): motor to set
     def setCurrentStepNumber(motor:str='all'):
+        '''
+        Set the current step number. 
+        Read and set the current step for focus, zoom, and/or iris motors from the MCR variables. 
+        ### input
+        - motor (optional: 'all'): ['focus' | 'zoom' | 'iris' | 'all']
+        '''
         if motor in {'focus', 'all'}:
             window['focusCurFld'].update(MCR.focus.currentStep)
         if motor in {'zoom', 'all'}:
@@ -96,9 +139,12 @@ def app():
         return
     
     # serachComPorts
-    # search for connected com ports for selecting MCR motor controllers
-    # return: list of com ports
     def searchComPorts():
+        '''
+        Search for connected com ports for selecting MCR motor controllers
+        ### return
+        [list of com ports]
+        '''
         ports = serial.tools.list_ports.comports()
         portList = []
         for port, desc, hwid in sorted(ports):
@@ -107,9 +153,14 @@ def app():
         return portList
     
     # setup lens parameters
-    # input: fam: family string ('TL1250P N# family', etc)
-    # return: lensConfig = [zoom steps, zoom PI, focus steps, focus PI, iris steps]
     def selectLens(fam:str) -> tuple[int]:
+        '''
+        Set up lens parameters focus steps, focus PI step, zoom steps, zoom PI step, iris steps. 
+        ### input
+        - fam: lens family (see lensFamiliesList variable for names. )
+        ### return
+        lensConfig = [zoom steps, zoom PI, focus steps, focus PI, iris steps]
+        '''
         log.info(f"Select {fam}")
         lensConfig = []
         if "410P R" in fam:
@@ -125,15 +176,20 @@ def app():
         return lensConfig
         
     # initialize motor controller
-    # regardlimits are set at the MCRControl.py level, not this local level
-    # regardBacklash is set at the local level so moves can vary this setting
-    # input: MCRCom comPort for MCR controllerlensConfig parameters if available
-    #        lens family prefix string (optional)
-    #       homeMotors: true to home motors
-    #       MCRInitialize: True for first initialization, false to only re-init motors
-    #       regardLimits: regard the limit switches and do not exceed
-    # return: initialized state
     def initMCR(MCRCom:str, lensFam:str='', homeMotors:bool=True, MCRInitialized:bool=True, regardLimits:bool=True) -> bool:
+        '''
+        Initialize the motor controller. 
+        Regardlimits are set at the MCRControl.py level, not this local level
+        RegardBacklash is set at the local level so moves can vary this setting
+        ### input: 
+        - MCRCom: comPort for MCR controllerlensConfig parameters if available
+        - lensFam (optional: ''): lens family string (see variable lensFamiliesList for names)
+        - homeMotors (optional: True): true to move motors to home positions
+        - MCRInitialize (optional: True): True for first initialization, false to only re-init motors
+        - regardLimits (optional: True): regard the limit switches and do not exceed
+        ### return: 
+        [initialized state]
+        '''
         nonlocal regardBacklash
         global MCR
         if lensFam != '':
@@ -160,10 +216,14 @@ def app():
         return True
     
     # mainGUILayout
-    # create the GUI window for the main window.  This can be re-created based on selected language
-    # There is a live motor control section, measurement section, settings section, and optional monitor section when the test is running 
-    # return: handle to the window
-    def mainGUILayout():       
+    def mainGUILayout():
+        '''
+        Main GUI layout. 
+        Create the GUI window for the main window.  This can be re-created based on selected language. 
+        There is a live motor control section, measurement section, settings section, and optional monitor section when the test is running 
+        ### return: 
+        [handle to the window]
+        '''
         sg.theme(TheiaColorTheme) 
         sg.set_global_icon(TheiaMenuIcon)
         # footer frame
@@ -340,18 +400,3 @@ def app():
 # call the app function in threading mode to allow user interaction while tests are running
 if __name__ == '__main__':
     app()
-
-# revision history
-#
-# v.1.0.1 230505 fixed location of settings file
-# v.1.0.0 230504 udpated GUI based on Master Control GUI v.3.2.3
-# v.0.3.0 221206 updated due to MCRControl.py function changes for focus/zoom movements
-# v.0.2.2 221112 fixed crash: modifications to autofocus
-# v.0.2.1 221102 lowered trigger for mid focus step to 0.20
-# v.0.2.0 221024 added autofocus
-#               dependency on commTCPIP (MTF machine)
-# v.0.1.4 221006 added limit on/off switch
-# v.0.1.3 221004 fixed initialization without movement to allow exceeding limits
-# v.0.1.2 221003 added initialization without movement
-# v.0.1.1 220901 added lens/com port selections
-# v.0.1.0 220830
