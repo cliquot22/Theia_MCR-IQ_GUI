@@ -10,7 +10,7 @@ import os
 import sys
 
 # revision
-revision = "v.1.3.0"
+revision = "v.1.4.0"
 
 # global variable
 MCR = None
@@ -43,11 +43,16 @@ def app():
         'TL410P R#'
     ]
     settingsFileName = 'Motor control config.json'
+    settingsIconPath = resourcePath('data/cog.png')    # location of the gear icon for settings
     MCRInitialized = False
     
     TheiaLogoImagePath = resourcePath('data/Theia_logo.png')
     TheiaMenuIcon = resourcePath('data/TL1250P.ico')
     TheiaColorTheme = 'DefaultNoMoreNagging' #'LightBlue2'
+    TheiaLightGreenColor = '#00CC66'
+    TheiaGreenColor = '#006633'
+    TheiaDarkBlueColor = '#333399'
+    TheiaLightBlueColor = '#3366CC'
 
     # read the saved settings file
     # find the settings file
@@ -138,6 +143,31 @@ def app():
             window['irisCurFld'].update(MCR.iris.currentStep)
         return
     
+    # set motor speeds
+    def setMotorSpeeds(focusSpeed:int=1000, zoomSpeed:int=1000, irisSpeed:int=100):
+        '''
+        Set the motor speeds.  Speeds are saved in the local settings file (not stored in control board EEPROM)
+        ### input: 
+        - focusSpeed (optional: 1000): focus motor pps speed
+        - zoomSpeed (optional: 1000): zoom motor pps speed
+        - irisSpeed (optional: 100): iris motor pps speed
+        '''
+        if (MCR.focus.setMotorSpeed(focusSpeed) == 'OK'): 
+            settings['focusSpeed'] = focusSpeed
+        else:
+            log.warning(f'Focus motor speed {focusSpeed} is out of range, not changed')
+
+        if (MCR.zoom.setMotorSpeed(focusSpeed) == 'OK'): 
+            settings['zoomSpeed'] = zoomSpeed
+        else:
+            log.warning(f'Zoom motor speed {focusSpeed} is out of range, not changed')
+
+        if (MCR.iris.setMotorSpeed(focusSpeed) == 'OK'): 
+            settings['irisSpeed'] = irisSpeed
+        else:
+            log.warning(f'Iris motor speed {focusSpeed} is out of range, not changed')
+        return
+    
     # serachComPorts
     def searchComPorts():
         '''
@@ -205,6 +235,8 @@ def app():
         MCR.focusInit(lensConfig[2], lensConfig[3], move=homeMotors)
         MCR.zoomInit(lensConfig[0], lensConfig[1], move=homeMotors)
         MCR.irisInit(lensConfig[4], move=homeMotors)
+        # set initial motor speeds
+        setMotorSpeeds(settings.get('focusSpeed', 1000), settings.get('zoomSpeed', 1000), settings.get('irisSpeed', 100))
 
         # initialize GUI settings
         setRegardLimits(regardLimits)
@@ -215,22 +247,80 @@ def app():
         setCurrentStepNumber()
         return True
     
+    # setting window layout
+    def settingsGUILayout(initPath:str):
+        '''
+        Create a window for additional settings.  This window includes communication path and motor speeds.  
+        Once set by the user, the motor speeds are written to the board and the communication path is updated.  
+        If the user cancels, nothing is changed and the return value is 'None'.  
+        ### input:
+        - initPath: current communication path string ('USB', 'UART', 'I2C')
+        ### return: 
+        [new communication path string | None]
+        '''
+        # motor speeds
+        speedsLayout = [
+            [sg.Text('Focus motor speed', expand_x=True), sg.Input('', size=(15,1), key='focusSpeed', disabled=True)],
+            [sg.Text('Zoom motor speed', expand_x=True), sg.Input('', size=(15,1), key='zoomSpeed', disabled=True)],
+            [sg.Text('Iris motor speed', expand_x=True), sg.Input('', size=(15,1), key='irisSpeed', disabled=True)],
+        ]
+        # communication path
+        comLayout = [
+            [sg.Text('Warning: Changing the communication path will reboot the controller board and the original communication path will no longer be active', 
+                     size=(30,4), text_color='red')],
+            [sg.Button('Change com path', key='changePath')],
+            [sg.Radio('USB', group_id='comGroup', default=(initPath == 'USB'), key='comUSB', visible=False), 
+             sg.Radio('UART', group_id='comGroup', default=(initPath == 'UART'), key='comUART', visible=False), 
+             sg.Radio('I2C', group_id='comGroup', default=(initPath == 'I2C'), key='comI2C', visible=False)]
+        ]
+        layout = [
+            [sg.Frame('Motor speeds', speedsLayout, expand_x=True)],
+            [sg.Frame('Communication', comLayout)],
+            [sg.Button('Save settings', key='save'), sg.Button('Discard settings', key='discard')]
+        ]
+        window = sg.Window('Set values', layout, finalize=True)
+        if MCRInitialized:
+            window['focusSpeed'].update(MCR.focus.currentSpeed)
+            window['focusSpeed'].update(disabled=False)
+            window['zoomSpeed'].update(MCR.zoom.currentSpeed)
+            window['zoomSpeed'].update(disabled=False)
+            window['irisSpeed'].update(MCR.iris.currentSpeed)
+            window['irisSpeed'].update(disabled=False)
+
+        while True:
+            event, values = window.read()
+            if event in {sg.WIN_CLOSED, 'save', 'discard'}:
+                break
+            elif event == 'changePath':
+                window['changePath'].update(visible=False)
+                window['comUSB'].update(visible=True)
+                window['comUART'].update(visible=True)
+                window['comI2C'].update(visible=True)
+        window.close()
+        if event == 'save': return values
+        return None
+    
     # mainGUILayout
     def mainGUILayout():
         '''
         Main GUI layout. 
-        Create the GUI window for the main window.  This can be re-created based on selected language. 
-        There is a live motor control section, measurement section, settings section, and optional monitor section when the test is running 
+        Create the GUI window for the main window.  
+        There is a live motor control section, measurement section, settings section, and optional monitor 
+        section when the test is running.  
         ### return: 
         [handle to the window]
         '''
         sg.theme(TheiaColorTheme) 
         sg.set_global_icon(TheiaMenuIcon)
+        sg.set_options(button_color=[TheiaLightGreenColor, TheiaDarkBlueColor])
         # footer frame
         footerFrame = [
             [sg.Text(revision, size=(12,1), font='Helvetica 8'),
                 sg.Text('', size=(20,1), font='Helvetica 8', key='fldFWRev'),
-                sg.Text('', size=(20,1), font='Helvetica 8', key='fldSNBoard')]
+                sg.Text('', size=(20,1), font='Helvetica 8', key='fldSNBoard'),
+                sg.Push(), 
+                sg.Image(filename=settingsIconPath, key='settingsPopup', enable_events=True),
+                sg.Button('Quit', size=(12,1), key="exitBtn")]
         ]
 
         # Live lens motor control section
@@ -278,7 +368,7 @@ def app():
         liveControlFrame = [
             [sg.Image(TheiaLogoImagePath), sg.Column(headerFrame)],
             [sg.Frame('Relative move', relMoveFrame), sg.Frame('Current', curPosFrame), sg.Frame('Absolute move', absMoveFrame)],
-            [sg.Column(footerFrame), sg.Push(), sg.Button('Quit', size=(12,1), key="exitBtn")]
+            [sg.Frame(title='', layout=footerFrame, expand_x=True)]
             ]
                     
         # overall layout
@@ -337,6 +427,17 @@ def app():
             else:
                 log.error("Com port is blank")
                 sg.popup_ok('Com port is blank', title='Error')
+
+        elif event == 'settingsPopup':
+            # open the settings popup window.  The communication path for this program will always be 'USB'.  
+            newComPath = settingsGUILayout('USB')
+            if newComPath != None:
+                if newComPath['focusSpeed'] != '' or newComPath['zoomSpeed'] != '' or newComPath['irisSpeed'] != '':
+                    setMotorSpeeds(newComPath['focusSpeed'], newComPath['zoomSpeed'], newComPath['irisSpeed'])
+                if newComPath['comUART'] or newComPath['comI2C']:
+                    # communications path was set to something else and USB is no longer available. 
+                    sg.popup_ok(f'New communication path was set to {"UART" if newComPath["comUART"] else "I2C"}.  USB communication is no longer available and this application will end.', title='New com path')
+                    break
 
         if MCRInitialized:
             if event == 'moveWideBtn':
