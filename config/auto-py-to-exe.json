@@ -1,0 +1,89 @@
+{
+ "version": "auto-py-to-exe-configuration_v1",
+ "pyinstallerOptions": [
+  {
+   "optionDest": "noconfirm",
+   "value": true
+  },
+  {
+   "optionDest": "filenames",
+   "value": "C:/Users/mpete/OneDrive - Theia Technologies/Documents/Python/Calibrated_lens_customer_software/Theia_lens_GUI/Theia_lens_GUI.py"
+  },
+  {
+   "optionDest": "onefile",
+   "value": true
+  },
+  {
+   "optionDest": "console",
+   "value": false
+  },
+  {
+   "optionDest": "icon_file",
+   "value": "C:/Users/mpete/OneDrive - Theia Technologies/Documents/Python/Calibrated_lens_customer_software/Theia_lens_GUI/data/TL1250P.ico"
+  },
+  {
+   "optionDest": "clean_build",
+   "value": false
+  },
+  {
+   "optionDest": "strip",
+   "value": false
+  },
+  {
+   "optionDest": "noupx",
+   "value": false
+  },
+  {
+   "optionDest": "disable_windowed_traceback",
+   "value": false
+  },
+  {
+   "optionDest": "embed_manifest",
+   "value": true
+  },
+  {
+   "optionDest": "uac_admin",
+   "value": false
+  },
+  {
+   "optionDest": "uac_uiaccess",
+   "value": false
+  },
+  {
+   "optionDest": "argv_emulation",
+   "value": false
+  },
+  {
+   "optionDest": "bootloader_ignore_signals",
+   "value": false
+  },
+  {
+   "optionDest": "win_private_assemblies",
+   "value": false
+  },
+  {
+   "optionDest": "win_no_prefer_redirects",
+   "value": false
+  },
+  {
+   "optionDest": "ascii",
+   "value": false
+  },
+  {
+   "optionDest": "datas",
+   "value": "C:/Users/mpete/OneDrive - Theia Technologies/Documents/Python/Calibrated_lens_customer_software/Theia_lens_GUI/data/Theia_logo.png;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "C:/Users/mpete/OneDrive - Theia Technologies/Documents/Python/Calibrated_lens_customer_software/Theia_lens_GUI/data/TL1250P.ico;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "C:/Users/mpete/OneDrive - Theia Technologies/Documents/Python/Calibrated_lens_customer_software/Theia_lens_GUI/data/cog.png;."
+  }
+ ],
+ "nonPyinstallerOptions": {
+  "increaseRecursionLimit": true,
+  "manualArguments": ""
+ }
+}

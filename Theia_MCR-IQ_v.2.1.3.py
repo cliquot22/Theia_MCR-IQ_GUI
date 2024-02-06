@@ -1,5 +1,5 @@
-# Live GUI motor control
-# (c) 2023 Theia Technologies LLC
+# Live GUI motor control and Lens IQ engineering unit conversion application
+# (c) 2024 Theia Technologies LLC
 # contact Mark Peterson at mpeterson@theiatech.com for more information
 
 import PySimpleGUI as sg
@@ -9,8 +9,12 @@ import serial.tools.list_ports
 import os
 import sys
 
+# lensIQ imports
+ENABLE_LENS_IQ_FUNCTIONS = False
+if ENABLE_LENS_IQ_FUNCTIONS: import lensIQ_expansion
+
 # revision
-revision = "v.1.4.0"
+revision = "v.2.1.3"
 
 # global variable
 MCR = None
@@ -42,9 +46,19 @@ def app():
         'TL936P R#',
         'TL410P R#'
     ]
+    readyStatus = 'notInit'
+    controllerStatusList = {
+        'notInit': ('Not initialized','red'),                   # default
+        'init': ('Initializing', 'yellow'),                     # -- in motion
+        'ready': ('Ready', 'green'),                            # ready to move     
+        'moving': ('Moving','yellow'),                          # -- in motion
+        'posUnknown': ('Position unknown','lightgreen'),        # set if steps exceeds min/max steps at any point, reset by initializing
+        'error': ('ERROR', 'red')                               # program or data error
+    }
     settingsFileName = 'Motor control config.json'
     settingsIconPath = resourcePath('data/cog.png')    # location of the gear icon for settings
     MCRInitialized = False
+    absMoveInit = False                                 # set to allow absolute movements (PI home positions known)
     
     TheiaLogoImagePath = resourcePath('data/Theia_logo.png')
     TheiaMenuIcon = resourcePath('data/TL1250P.ico')
@@ -53,6 +67,7 @@ def app():
     TheiaGreenColor = '#006633'
     TheiaDarkBlueColor = '#333399'
     TheiaLightBlueColor = '#3366CC'
+    IRCSelectedColor = TheiaGreenColor                  # color for selected IRC filter
 
     # read the saved settings file
     # find the settings file
@@ -75,19 +90,31 @@ def app():
         return settings
 
     # enbleLiveFrame
-    def enableLiveFrame(enable:bool=True) -> bool:
+    def enableLiveFrame(enable:bool=True, absoluteInit:bool=False) -> bool:
         '''
         Enable buttons and inputs in the live frame. 
         ### input
-        - enable (bool): state
+        - enable (optional: True): state
+        - absoluteInit (optional: False): enable absolute motor movements from home positions
+        ### global
+        - absMoveInit: set if relativeOnly is False
         ### return
         [enabled value]
         '''
+        nonlocal absMoveInit
+        absMoveInit = absoluteInit
+
+        # relative movement buttons
         componentList = ['moveTeleBtn', 'moveWideBtn', 'moveNearBtn', 'moveFarBtn', 'moveOpenBtn', 'moveCloseBtn', \
-            'moveZoomAbsBtn', 'moveFocusAbsBtn', 'moveIrisAbsBtn', \
-            'zoomCurFld', 'focusCurFld', 'irisCurFld', 'zoomStepFld', 'focusStepFld', 'irisStepFld']
+            'zoomCurFld', 'focusCurFld', 'irisCurFld', 'zoomStepFld', 'focusStepFld', 'irisStepFld', 'IRCBtn1', 'IRCBtn2']
         for component in componentList:
             window[component].update(disabled = not enable)
+        
+        # absolute movement buttons
+        if absoluteInit:
+            componentList = ['moveZoomAbsBtn', 'moveFocusAbsBtn', 'moveIrisAbsBtn']
+            for component in componentList:
+                window[component].update(disabled = not enable)
         return not enable
     
     # enableLiveFrameAbs
@@ -152,17 +179,17 @@ def app():
         - zoomSpeed (optional: 1000): zoom motor pps speed
         - irisSpeed (optional: 100): iris motor pps speed
         '''
-        if (MCR.focus.setMotorSpeed(focusSpeed) == 'OK'): 
+        if (MCR.focus.setMotorSpeed(int(focusSpeed)) == 0): 
             settings['focusSpeed'] = focusSpeed
         else:
             log.warning(f'Focus motor speed {focusSpeed} is out of range, not changed')
 
-        if (MCR.zoom.setMotorSpeed(focusSpeed) == 'OK'): 
+        if (MCR.zoom.setMotorSpeed(int(zoomSpeed)) == 0): 
             settings['zoomSpeed'] = zoomSpeed
         else:
             log.warning(f'Zoom motor speed {focusSpeed} is out of range, not changed')
 
-        if (MCR.iris.setMotorSpeed(focusSpeed) == 'OK'): 
+        if (MCR.iris.setMotorSpeed(int(irisSpeed)) == 0): 
             settings['irisSpeed'] = irisSpeed
         else:
             log.warning(f'Iris motor speed {focusSpeed} is out of range, not changed')
@@ -186,24 +213,33 @@ def app():
     def selectLens(fam:str) -> tuple[int]:
         '''
         Set up lens parameters focus steps, focus PI step, zoom steps, zoom PI step, iris steps. 
+        Based on lens model number, return the configuration and serial number prefix ('TW90').  
         ### input
         - fam: lens family (see lensFamiliesList variable for names. )
         ### return
-        lensConfig = [zoom steps, zoom PI, focus steps, focus PI, iris steps]
+        [
+            prefix = ['TW50' | 'TW60' | 'TW80' | 'TW90' | 'TW46'],
+            lensConfig = [zoom steps, zoom PI, focus steps, focus PI, iris steps]
         '''
         log.info(f"Select {fam}")
         lensConfig = []
+        previx = ''
         if "410P R" in fam:
+            prefix = 'TW50'
             lensConfig = [4073, 154, 9353, 8652, 75]
         elif "1250P R" in fam:
+            prefix = 'TW60'
             lensConfig = [3256, 3147, 8466, 8031, 75]
         elif "410P N" in fam:
+            prefix = 'TW80'
             lensConfig = [4017, 136, 9269, 8574, 75]
         elif "1250P N" in fam:
+            prefix = 'TW90'
             lensConfig = [3227, 3119, 8390, 7959, 75]
         elif "936" in fam:
+            prefix = 'TW46'
             lensConfig = [2994, 2958, 5180, 5128, 75]
-        return lensConfig
+        return prefix, lensConfig
         
     # initialize motor controller
     def initMCR(MCRCom:str, lensFam:str='', homeMotors:bool=True, MCRInitialized:bool=True, regardLimits:bool=True) -> bool:
@@ -222,19 +258,23 @@ def app():
         '''
         nonlocal regardBacklash
         global MCR
+        setStatus('init')
         if lensFam != '':
             # initialize configuration
-            lensConfig = selectLens(lensFam)
+            _, lensConfig = selectLens(lensFam)
         if not MCRInitialized: 
             MCR = TheiaMCR.MCRControl(MCRCom)
             if not MCR.MCRInitialized:
                 return False
             window['fldFWRev'].update(f'FW: {MCR.MCRBoard.readFWRevision()}')
             window['fldSNBoard'].update(f'SN: {MCR.MCRBoard.readBoardSN()}')
-        log.debug('  initializing motors')
+        log.info('Initializing motors')
         MCR.focusInit(lensConfig[2], lensConfig[3], move=homeMotors)
         MCR.zoomInit(lensConfig[0], lensConfig[1], move=homeMotors)
         MCR.irisInit(lensConfig[4], move=homeMotors)
+        MCR.IRCInit()
+        MCR.IRCState(1)
+        window['IRCBtn1'].update(button_color=IRCSelectedColor)
         # set initial motor speeds
         setMotorSpeeds(settings.get('focusSpeed', 1000), settings.get('zoomSpeed', 1000), settings.get('irisSpeed', 100))
 
@@ -243,9 +283,27 @@ def app():
         window['cp_limitCheck'].update(regardLimits)
         regardBacklash = setRegardBacklash(True)
         window['cp_backlash'].update(regardBacklash)
-        enableLiveFrame(True)
+        enableLiveFrame(True, absoluteInit=homeMotors)
+        if ENABLE_LENS_IQ_FUNCTIONS: IQEP.initMotors(MCR, enableFields=regardLimits)
         setCurrentStepNumber()
+        setStatus('ready')
+        log.info('Lens initialized')
         return True
+    
+    # set the controller status indicators
+    def setStatus(status):
+        '''
+        Set the status indicators to the current controller status.  
+        ### input:
+        - status: the new status (from controllerStatusList)
+        '''
+        nonlocal readyStatus
+        readyStatus = status
+        
+        window['fldStatus'].update(controllerStatusList[readyStatus][0])
+        window['fldStatus'].update(background_color=controllerStatusList[readyStatus][1])
+        window.refresh()
+        return
     
     # setting window layout
     def settingsGUILayout(initPath:str):
@@ -276,7 +334,7 @@ def app():
         layout = [
             [sg.Frame('Motor speeds', speedsLayout, expand_x=True)],
             [sg.Frame('Communication', comLayout)],
-            [sg.Button('Save settings', key='save'), sg.Button('Discard settings', key='discard')]
+            [sg.Button('Save settings', key='save'), sg.Button('Cancel', key='discard')]
         ]
         window = sg.Window('Set values', layout, finalize=True)
         if MCRInitialized:
@@ -307,6 +365,7 @@ def app():
         Create the GUI window for the main window.  
         There is a live motor control section, measurement section, settings section, and optional monitor 
         section when the test is running.  
+        The section for converting from engineering units to motor steps is supported by Lens IQ module functions.  
         ### return: 
         [handle to the window]
         '''
@@ -336,8 +395,9 @@ def app():
             ]
         # initialize motor control sub-frame
         initMotorsFrame = [
-            [sg.Button('Initialize and home motors', size=(20,1), key='motorInitHomeBtn'),
-                sg.Button('Initialize motors', size=(12,1), key='motorInitBtn')]
+            [sg.Button('Initialize and home motors', size=(12,2), key='motorInitHomeBtn'),
+                sg.Button('Initialize motors', size=(12,2), key='motorInitBtn'),
+                sg.Frame('Status', [[sg.Text('', key='fldStatus', size=(12,1), justification='center')]]) ]
             ]
         # lens header including picture and setup functions
         headerFrame = [
@@ -365,21 +425,29 @@ def app():
             [sg.Button('Focus', size=(12,1), key='moveFocusAbsBtn', disabled=True)],
             [sg.Button('Iris', size=(12,1), key='moveIrisAbsBtn', disabled=True)],
             ]
-        liveControlFrame = [
-            [sg.Image(TheiaLogoImagePath), sg.Column(headerFrame)],
-            [sg.Frame('Relative move', relMoveFrame), sg.Frame('Current', curPosFrame), sg.Frame('Absolute move', absMoveFrame)],
-            [sg.Frame(title='', layout=footerFrame, expand_x=True)]
-            ]
+        IRCFrame = [
+            [sg.Text('Internal filter (IRC):'), sg.Button('Filter 1 (Visible)', size=(20,1), key='IRCBtn1'), sg.Button('Filter 2 (Visible + IR)', size=(20,1), key='IRCBtn2')]
+        ]
+        liveControlFrame = []
+        liveControlFrame.append([sg.Image(TheiaLogoImagePath), sg.Column(headerFrame)])
+        if ENABLE_LENS_IQ_FUNCTIONS:
+            lensIQTopFrame, lensIQBottomFrame = IQEP.lensIQGUILayout()
+            liveControlFrame.append([sg.Frame('Lens IQ', lensIQTopFrame, expand_x=True)])
+            liveControlFrame.append([sg.Frame('', lensIQBottomFrame, expand_x=True)])
+        liveControlFrame.append([sg.Frame('Relative move', relMoveFrame), sg.Frame('Current', curPosFrame), sg.Frame('Absolute move', absMoveFrame)])
+        liveControlFrame.append([sg.Column(IRCFrame)])
+        liveControlFrame.append([sg.Frame(title='', layout=footerFrame, expand_x=True)])
                     
         # overall layout
         layout = [
             [sg.Frame('Motor control', liveControlFrame, expand_x=True)]
             ] 
-        window = sg.Window('Theia lens motor control', layout, finalize=True)
+        window = sg.Window('Theia MCR IQ control', layout, finalize=True)
         return window
 
 
     #***************** main application routine ***********************
+    if ENABLE_LENS_IQ_FUNCTIONS: IQEP = lensIQ_expansion.IQExpansionPack()
     settings = readSettingsFile()
     comPort = settings.get('comPort', '')
     comPortList = searchComPorts()
@@ -388,9 +456,19 @@ def app():
 
     # default lens setup
     lastLensFamily = settings.get('lastLensFamily', 'TL1250P N#')
-    selectLens(lastLensFamily)
-
+    lastLensFamilyPrefix, _ = selectLens(lastLensFamily)
+    
+    # create the GUI window
     window = mainGUILayout()
+    # key bindings
+    window['zoomCurFld'].bind('<Return>', 'Update')
+    window['focusCurFld'].bind('<Return>', 'Update')
+    window['irisCurFld'].bind('<Return>', 'Update')
+    setStatus('notInit')
+    enableLiveFrame(False)
+
+    # Lens IQ setup variables
+    if ENABLE_LENS_IQ_FUNCTIONS: IQEP.setup(window, lastLensFamilyPrefix, settings, setStatus)
 
     while (True):
         event, values = window.read()
@@ -401,12 +479,16 @@ def app():
 
         elif event == 'cp_lensFam':
             lastLensFamily = values['cp_lensFam']
-            selectLens(lastLensFamily)
+            lastLensFamilyPrefix, _ = selectLens(lastLensFamily)
             settings['lastLensFamily'] = lastLensFamily
 
         elif event == 'cp_port':
             comPort = values['cp_port']
             settings['comPort'] = comPort
+            # cancel motor initialization status
+            setStatus('NotInit')
+            enableLiveFrame(False)
+            MCRInitialized = False
 
         elif event == 'cp_limitCheck':
             setRegardLimits(values['cp_limitCheck'])
@@ -430,69 +512,97 @@ def app():
 
         elif event == 'settingsPopup':
             # open the settings popup window.  The communication path for this program will always be 'USB'.  
-            newComPath = settingsGUILayout('USB')
-            if newComPath != None:
-                if newComPath['focusSpeed'] != '' or newComPath['zoomSpeed'] != '' or newComPath['irisSpeed'] != '':
-                    setMotorSpeeds(newComPath['focusSpeed'], newComPath['zoomSpeed'], newComPath['irisSpeed'])
-                if newComPath['comUART'] or newComPath['comI2C']:
+            settingsValues = settingsGUILayout('USB')
+            if settingsValues != None:
+                if settingsValues['focusSpeed'] != '' or settingsValues['zoomSpeed'] != '' or settingsValues['irisSpeed'] != '':
+                    setMotorSpeeds(settingsValues['focusSpeed'], settingsValues['zoomSpeed'], settingsValues['irisSpeed'])
+                if settingsValues['comUART'] or settingsValues['comI2C']:
                     # communications path was set to something else and USB is no longer available. 
-                    sg.popup_ok(f'New communication path was set to {"UART" if newComPath["comUART"] else "I2C"}.  USB communication is no longer available and this application will end.', title='New com path')
+                    sg.popup_ok(f'New communication path was set to {"UART" if settingsValues["comUART"] else "I2C"}.  USB communication is no longer available and this application will end.', title='New com path')
                     break
+        
+        elif event == 'IRCBtn1':
+            window['IRCBtn1'].update(button_color=IRCSelectedColor)
+            window['IRCBtn2'].update(button_color=TheiaDarkBlueColor)
+            MCR.IRCState(1)
+            
+        elif event == 'IRCBtn2':
+            window['IRCBtn1'].update(button_color=TheiaDarkBlueColor)
+            window['IRCBtn2'].update(button_color=IRCSelectedColor)
+            MCR.IRCState(2)
 
-        if MCRInitialized:
+        if ENABLE_LENS_IQ_FUNCTIONS: IQEP.checkEvents(event, values)
+
+        if MCRInitialized and event in {'moveWideBtn', 'moveTeleBtn', 'moveNearBtn', 'moveFarBtn', 'moveOpenBtn', 'moveCloseBtn', 'moveZoomAbsBtn', 'moveFocusAbsBtn', 'moveIrisAbsBtn', 'zoomCurFldUpdate', 'focusCurFldUpdate', 'irisCurFldUpdate'}:
+            setStatus('moving')
             if event == 'moveWideBtn':
                 # move zoom motor
                 MCR.zoom.moveRel(int(values['zoomStepFld']), correctForBL=regardBacklash)
                 # update field
                 window['zoomCurFld'].update(MCR.zoom.currentStep)
+                if ENABLE_LENS_IQ_FUNCTIONS: IQEP.updateAfterZoom()
 
             elif event == 'moveTeleBtn':
                 # move zoom motor
                 MCR.zoom.moveRel(-int(values['zoomStepFld']), correctForBL=regardBacklash)
                 # update field
                 window['zoomCurFld'].update(MCR.zoom.currentStep)
+                if ENABLE_LENS_IQ_FUNCTIONS: IQEP.updateAfterZoom()
 
             elif event == 'moveNearBtn':
                 # move focus motor
                 MCR.focus.moveRel(-int(values['focusStepFld']), correctForBL=regardBacklash)
                 # update field
                 window['focusCurFld'].update(MCR.focus.currentStep)
+                if ENABLE_LENS_IQ_FUNCTIONS: IQEP.updateAfterFocus(changeOD=False)
 
             elif event == 'moveFarBtn':
                 # move focus motor
                 MCR.focus.moveRel(int(values['focusStepFld']), correctForBL=regardBacklash)
                 # updated field
                 window['focusCurFld'].update(MCR.focus.currentStep)
+                if ENABLE_LENS_IQ_FUNCTIONS: IQEP.updateAfterFocus(changeOD=False)
 
             elif event == 'moveOpenBtn':
                 # move iris motor
-                MCR.iris.moveRel(-int(values['irisStepFld']))
+                MCR.iris.moveRel(-int(values['irisStepFld']), correctForBL=False)
                 # update field
                 window['irisCurFld'].update(MCR.iris.currentStep)
+                if ENABLE_LENS_IQ_FUNCTIONS: IQEP.updateAfterIris()
 
             elif event == 'moveCloseBtn':
                 # move iris motor
-                MCR.iris.moveRel(int(values['irisStepFld']))
+                MCR.iris.moveRel(int(values['irisStepFld']), correctForBL=False)
                 # updated field
                 window['irisCurFld'].update(MCR.iris.currentStep)
+                if ENABLE_LENS_IQ_FUNCTIONS: IQEP.updateAfterIris()
 
-            elif event == 'moveZoomAbsBtn':
-                # move to absolute position
-                MCR.zoom.moveAbs(int(values['zoomCurFld']))
-                # confirm update field
-                window['zoomCurFld'].update(MCR.zoom.currentStep)
+            elif event in {'moveZoomAbsBtn', 'zoomCurFldUpdate'}:
+                if absMoveInit:
+                    # move to absolute position
+                    MCR.zoom.moveAbs(int(values['zoomCurFld']))
+                    # confirm update field
+                    window['zoomCurFld'].update(MCR.zoom.currentStep)
+                    if ENABLE_LENS_IQ_FUNCTIONS: IQEP.updateAfterZoom()
 
-            elif event == 'moveFocusAbsBtn':
-                # move to absolute position
-                MCR.focus.moveAbs(int(values['focusCurFld']))
-                # confirm update field
-                window['focusCurFld'].update(MCR.focus.currentStep)
+            elif event in {'moveFocusAbsBtn', 'focusCurFldUpdate'}:
+                if absMoveInit:
+                    # move to absolute position
+                    MCR.focus.moveAbs(int(values['focusCurFld']))
+                    # confirm update field
+                    window['focusCurFld'].update(MCR.focus.currentStep)
+                    if ENABLE_LENS_IQ_FUNCTIONS: IQEP.updateAfterFocus(changeOD=False)
 
-            elif event == 'moveIrisAbsBtn':
-                # move to absolute position
-                MCR.iris.moveAbs(int(values['irisCurFld']))
-                # confirm update field
-                window['irisCurFld'].update(MCR.iris.currentStep)
+            elif event in {'moveIrisAbsBtn', 'irisCurFldUpdate'}:
+                if absMoveInit:
+                    # move to absolute position
+                    MCR.iris.moveAbs(int(values['irisCurFld']))
+                    # confirm update field
+                    window['irisCurFld'].update(MCR.iris.currentStep)
+                    if ENABLE_LENS_IQ_FUNCTIONS: IQEP.updateAfterIris()
+            
+            ####### check for unknown position
+            setStatus('ready')
 
     window.close()
     return
