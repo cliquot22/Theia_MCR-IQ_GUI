@@ -7,7 +7,7 @@
   },
   {
    "optionDest": "filenames",
-   "value": "C:/Users/mpete/OneDrive - Theia Technologies/Documents/Python/Calibrated_lens_customer_software/Theia_lens_GUI/Theia_lens_GUI.py"
+   "value": "C:/Users/mpete/OneDrive - Theia Technologies/Documents/Python/Calibrated_lens_customer_software/Theia_MCR-IQ_GUI/Theia_MCR-IQ_v.2.1.3.py"
   },
   {
    "optionDest": "onefile",
@@ -19,7 +19,7 @@
   },
   {
    "optionDest": "icon_file",
-   "value": "C:/Users/mpete/OneDrive - Theia Technologies/Documents/Python/Calibrated_lens_customer_software/Theia_lens_GUI/data/TL1250P.ico"
+   "value": "C:/Users/mpete/OneDrive - Theia Technologies/Documents/Python/Calibrated_lens_customer_software/Theia_MCR-IQ_GUI/data/TL1250P.ico"
   },
   {
    "optionDest": "clean_build",
@@ -71,15 +71,15 @@
   },
   {
    "optionDest": "datas",
-   "value": "C:/Users/mpete/OneDrive - Theia Technologies/Documents/Python/Calibrated_lens_customer_software/Theia_lens_GUI/data/Theia_logo.png;."
+   "value": "C:/Users/mpete/OneDrive - Theia Technologies/Documents/Python/Calibrated_lens_customer_software/Theia_MCR-IQ_GUI/data/Theia_logo.png;."
   },
   {
    "optionDest": "datas",
-   "value": "C:/Users/mpete/OneDrive - Theia Technologies/Documents/Python/Calibrated_lens_customer_software/Theia_lens_GUI/data/TL1250P.ico;."
+   "value": "C:/Users/mpete/OneDrive - Theia Technologies/Documents/Python/Calibrated_lens_customer_software/Theia_MCR-IQ_GUI/data/TL1250P.ico;."
   },
   {
    "optionDest": "datas",
-   "value": "C:/Users/mpete/OneDrive - Theia Technologies/Documents/Python/Calibrated_lens_customer_software/Theia_lens_GUI/data/cog.png;."
+   "value": "C:/Users/mpete/OneDrive - Theia Technologies/Documents/Python/Calibrated_lens_customer_software/Theia_MCR-IQ_GUI/data/cog.png;."
   }
  ],
  "nonPyinstallerOptions": {

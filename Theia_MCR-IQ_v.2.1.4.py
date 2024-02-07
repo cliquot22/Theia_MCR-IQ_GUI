@@ -14,7 +14,7 @@ ENABLE_LENS_IQ_FUNCTIONS = False
 if ENABLE_LENS_IQ_FUNCTIONS: import lensIQ_expansion
 
 # revision
-revision = "v.2.1.3"
+revision = "v.2.1.4"
 
 # global variable
 MCR = None
@@ -223,7 +223,7 @@ def app():
         '''
         log.info(f"Select {fam}")
         lensConfig = []
-        previx = ''
+        prefix = ''
         if "410P R" in fam:
             prefix = 'TW50'
             lensConfig = [4073, 154, 9353, 8652, 75]
@@ -486,7 +486,7 @@ def app():
             comPort = values['cp_port']
             settings['comPort'] = comPort
             # cancel motor initialization status
-            setStatus('NotInit')
+            setStatus('notInit')
             enableLiveFrame(False)
             MCRInitialized = False
 
