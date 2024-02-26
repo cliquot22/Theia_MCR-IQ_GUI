@@ -14,12 +14,13 @@ ENABLE_LENS_IQ_FUNCTIONS = False
 if ENABLE_LENS_IQ_FUNCTIONS: import lensIQ_expansion
 
 # revision
-revision = "v.2.1.4"
+revision = "v.2.2.0"
 
 # global variable
 MCR = None
 
 def app():
+    global MCR
     # logging setup
     log.basicConfig(level=log.DEBUG, format='%(levelname)-7s ln:%(lineno)-4d %(module)-18s  %(message)s')
     
@@ -86,7 +87,7 @@ def app():
             settings = sg.UserSettings(filename=settingsFileName, path=appDir)
             settings['comPort'] = ''
             settings['lastLensFamily'] = ''
-        settings = sg.UserSettings(filename=settingsFileName, path=appDir)
+        settings = sg.UserSettings(filename=settingsFileName, path=appDir, autosave=True)
         return settings
 
     # enbleLiveFrame
@@ -180,17 +181,17 @@ def app():
         - irisSpeed (optional: 100): iris motor pps speed
         '''
         if (MCR.focus.setMotorSpeed(int(focusSpeed)) == 0): 
-            settings['focusSpeed'] = focusSpeed
+            settings['focusSpeed'] = int(focusSpeed)
         else:
             log.warning(f'Focus motor speed {focusSpeed} is out of range, not changed')
 
         if (MCR.zoom.setMotorSpeed(int(zoomSpeed)) == 0): 
-            settings['zoomSpeed'] = zoomSpeed
+            settings['zoomSpeed'] = int(zoomSpeed)
         else:
             log.warning(f'Zoom motor speed {focusSpeed} is out of range, not changed')
 
         if (MCR.iris.setMotorSpeed(int(irisSpeed)) == 0): 
-            settings['irisSpeed'] = irisSpeed
+            settings['irisSpeed'] = int(irisSpeed)
         else:
             log.warning(f'Iris motor speed {focusSpeed} is out of range, not changed')
         return
@@ -265,6 +266,8 @@ def app():
         if not MCRInitialized: 
             MCR = TheiaMCR.MCRControl(MCRCom)
             if not MCR.MCRInitialized:
+                log.error('** MCR initialization failed')
+                MCR = None
                 return False
             window['fldFWRev'].update(f'FW: {MCR.MCRBoard.readFWRevision()}')
             window['fldSNBoard'].update(f'SN: {MCR.MCRBoard.readBoardSN()}')
@@ -305,8 +308,11 @@ def app():
         window.refresh()
         return
     
-    # setting window layout
-    def settingsGUILayout(initPath:str):
+    ##############################################
+    ### GUI layout and handling
+    ##############################################
+    # setting window 
+    def settingsGUI(initPath:str):
         '''
         Create a window for additional settings.  This window includes communication path and motor speeds.  
         Once set by the user, the motor speeds are written to the board and the communication path is updated.  
@@ -336,7 +342,8 @@ def app():
             [sg.Frame('Communication', comLayout)],
             [sg.Button('Save settings', key='save'), sg.Button('Cancel', key='discard')]
         ]
-        window = sg.Window('Set values', layout, finalize=True)
+
+        window = sg.Window('Set values', layout, modal=True, finalize=True)
         if MCRInitialized:
             window['focusSpeed'].update(MCR.focus.currentSpeed)
             window['focusSpeed'].update(disabled=False)
@@ -407,10 +414,11 @@ def app():
             ]
 
         # motor control sub-frames
+        defaultSteps = '100' if ENABLE_LENS_IQ_FUNCTIONS else '1000'        # change defaults steps based on IQ functions enabled
         relMoveFrame = [
-            [sg.Button('Tele', size=(12,1), key='moveTeleBtn'), sg.Input('1000', size=(12,1), justification='center', disabled_readonly_background_color='LightGray', key='zoomStepFld'), 
+            [sg.Button('Tele', size=(12,1), key='moveTeleBtn'), sg.Input(defaultSteps, size=(12,1), justification='center', disabled_readonly_background_color='LightGray', key='zoomStepFld'), 
                 sg.Button('Wide', size=(12,1), key='moveWideBtn')],
-            [sg.Button('Near', size=(12,1), key='moveNearBtn'), sg.Input('1000', size=(12,1), justification='center', disabled_readonly_background_color='LightGray', key='focusStepFld'), 
+            [sg.Button('Near', size=(12,1), key='moveNearBtn'), sg.Input(defaultSteps, size=(12,1), justification='center', disabled_readonly_background_color='LightGray', key='focusStepFld'), 
                 sg.Button('Far', size=(12,1), key='moveFarBtn')],
             [sg.Button('Open', size=(12,1), key='moveOpenBtn'), sg.Input('10', size=(12,1), justification='center', disabled_readonly_background_color='LightGray', key='irisStepFld'), 
                 sg.Button('Close', size=(12,1), key='moveCloseBtn')],
@@ -442,11 +450,13 @@ def app():
         layout = [
             [sg.Frame('Motor control', liveControlFrame, expand_x=True)]
             ] 
-        window = sg.Window('Theia MCR IQ control', layout, finalize=True)
+        title = 'Theia Lens IQ control' if ENABLE_LENS_IQ_FUNCTIONS else 'Theia MCR IQ control' 
+        window = sg.Window(title, layout, finalize=True)
         return window
 
-
-    #***************** main application routine ***********************
+    ##################################################
+    ### main application routine 
+    ##################################################
     if ENABLE_LENS_IQ_FUNCTIONS: IQEP = lensIQ_expansion.IQExpansionPack()
     settings = readSettingsFile()
     comPort = settings.get('comPort', '')
@@ -471,11 +481,14 @@ def app():
     if ENABLE_LENS_IQ_FUNCTIONS: IQEP.setup(window, lastLensFamilyPrefix, settings, setStatus)
 
     while (True):
-        event, values = window.read()
-        #log.debug(f"Event: {event}")
-        # exit calibration app
+        sourceWindow, event, values = sg.read_all_windows()
+        #log.debug(f"Event: {event}\n{values}")
         if event in (sg.WIN_CLOSED, 'exitBtn'):
-            break
+            if sourceWindow == window:
+                # close application
+                break
+            else:
+                IQEP.closeWindow(sourceWindow)
 
         elif event == 'cp_lensFam':
             lastLensFamily = values['cp_lensFam']
@@ -500,24 +513,37 @@ def app():
             if comPort != '':
                 MCRInitialized = initMCR(MCRCom=comPort, homeMotors=False, lensFam=lastLensFamily, MCRInitialized=MCRInitialized, regardLimits=False)
             else:
-                log.error("Com port is blank")
+                log.error("** Com port is blank")
                 sg.popup_ok('Com port is blank', title='Error')
         
         elif event == 'motorInitHomeBtn':
             if comPort != '':
                 MCRInitialized = initMCR(lensFam=lastLensFamily, MCRCom=comPort, homeMotors=True, MCRInitialized=MCRInitialized, regardLimits=True)
             else:
-                log.error("Com port is blank")
+                log.error("** Com port is blank")
                 sg.popup_ok('Com port is blank', title='Error')
 
         elif event == 'settingsPopup':
             # open the settings popup window.  The communication path for this program will always be 'USB'.  
-            settingsValues = settingsGUILayout('USB')
+            settingsValues = settingsGUI('USB')
             if settingsValues != None:
                 if settingsValues['focusSpeed'] != '' or settingsValues['zoomSpeed'] != '' or settingsValues['irisSpeed'] != '':
                     setMotorSpeeds(settingsValues['focusSpeed'], settingsValues['zoomSpeed'], settingsValues['irisSpeed'])
                 if settingsValues['comUART'] or settingsValues['comI2C']:
                     # communications path was set to something else and USB is no longer available. 
+                    if comPort == '':
+                        log.error('** Com port is blank')
+                        sg.popup_ok('Com path not changed: Com port is blank', title='Error')
+                        continue
+                    if not MCRInitialized: 
+                        MCR = TheiaMCR.MCRControl(comPort)
+                        if not MCR.MCRInitialized:
+                            log.error('** Com path not changed: MCR not initialized')
+                            sg.popup_ok('Motor control initalization error, communication path not changed', title='Error')
+                            MCR = None
+                            continue
+                        MCRInitialized = True
+                    MCR.MCRBoard.setCommunicationPath('UART' if settingsValues['comUART'] else 'I2C')
                     sg.popup_ok(f'New communication path was set to {"UART" if settingsValues["comUART"] else "I2C"}.  USB communication is no longer available and this application will end.', title='New com path')
                     break
         
@@ -531,7 +557,7 @@ def app():
             window['IRCBtn2'].update(button_color=IRCSelectedColor)
             MCR.IRCState(2)
 
-        if ENABLE_LENS_IQ_FUNCTIONS: IQEP.checkEvents(event, values)
+        if ENABLE_LENS_IQ_FUNCTIONS: IQEP.checkEvents(sourceWindow == window, event, values)
 
         if MCRInitialized and event in {'moveWideBtn', 'moveTeleBtn', 'moveNearBtn', 'moveFarBtn', 'moveOpenBtn', 'moveCloseBtn', 'moveZoomAbsBtn', 'moveFocusAbsBtn', 'moveIrisAbsBtn', 'zoomCurFldUpdate', 'focusCurFldUpdate', 'irisCurFldUpdate'}:
             setStatus('moving')
