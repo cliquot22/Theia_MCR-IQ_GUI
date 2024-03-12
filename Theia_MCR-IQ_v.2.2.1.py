@@ -14,7 +14,7 @@ ENABLE_LENS_IQ_FUNCTIONS = False
 if ENABLE_LENS_IQ_FUNCTIONS: import lensIQ_expansion
 
 # revision
-revision = "v.2.2.0"
+revision = "v.2.2.1"
 
 # global variable
 MCR = None

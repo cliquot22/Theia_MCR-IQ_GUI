@@ -3,8 +3,9 @@ BFL: compare calibration OD to current OD for other distance units (ft)
 
 
 # Revision history 
+    v.2.2.1 240305 implemented signed exe
 v.2.2.0 240207 (lensIQ) added sensor diagonal and ratio input
-            Added BFLClass and BFL GUI
+            (lensIQ) Added BFLClass and BFL GUI
             Bug: added command to change communication path (previously missing)
     v.2.1.4 240207 bug: variable name 'prefix' in selectLens()
             bug: comport change status update error
