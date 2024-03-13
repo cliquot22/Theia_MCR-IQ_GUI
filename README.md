@@ -18,12 +18,10 @@ Theia Technologies [BSD license](https://theiatech.com/Theia_BSD)
 Copyright 2023-2024 Theia Technologies
 
 # Contact information
-For more information contact: 
+For more information: 
 
-Theia Technologies' [MCR board webpage](https://www.theiatech.com/lenses/accessories/mcr/) 
-
-Mark Peterson at Theia Technologies
-
+Theia Technologies' [MCR controller webpage](https://www.theiatech.com/lenses/accessories/mcr/)  
+or contact Mark Peterson at Theia Technologies  
 [mpeterson@theiatech.com](mailto://mpeterson@theiatech.com)
 
 Revision
