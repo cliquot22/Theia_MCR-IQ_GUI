@@ -14,7 +14,7 @@ ENABLE_LENS_IQ_FUNCTIONS = False
 if ENABLE_LENS_IQ_FUNCTIONS: import lensIQ_expansion
 
 # revision
-revision = "v.2.4.0"
+revision = "v.2.4.1"
 
 # global variable
 MCR = None
@@ -498,17 +498,27 @@ def app():
             settings['lastLensFamily'] = lastLensFamily
 
         elif event == 'cp_port':
-            comPort = values['cp_port']
-            settings['comPort'] = comPort
-            # cancel motor initialization status
-            setStatus('notInit')
-            enableLiveFrame(False)
-            MCRInitialized = False
+            newComPort = values['cp_port']
+            if newComPort != comPort:
+                comPort = newComPort
+                settings['comPort'] = comPort
+                # cancel motor initialization status
+                setStatus('notInit')
+                enableLiveFrame(False)
+                MCRInitialized = False
 
         elif event == 'cp_refresh':
-            comPortList = searchComPorts()
-            window['cp_port'].update(values=sorted(comPortList))
-            comPort = comPortList[-1]
+            newComPortList = searchComPorts()
+            window['cp_port'].update(values=sorted(newComPortList))
+            if comPort not in newComPortList:
+                # previously selected comPort no longer available, choose the last one in the new list
+                comPort = newComPortList[-1] if len(newComPortList) >= 1 else ''
+                if comPort != '':
+                    settings['comPort'] = comPort
+                # cancel motor initialization status
+                setStatus('notInit')
+                enableLiveFrame(False)
+                MCRInitialized = False
             window['cp_port'].update(comPort)
 
         elif event == 'cp_limitCheck':

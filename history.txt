@@ -1,5 +1,5 @@
 # Revision history 
-    v.2.4.1 241001 added last COM port list number to selected comport field 
+    v.2.4.1 241001 added last COM port list number to selected comport field, required adjustment to cp_port and cp_refresh events
 v.2.4.0 241001 added COM port refresh
     v.2.3.2 240919 (lensIQ) fixed documentation bug: sensor w/h should be w/diag.  
     v.2.3.1 adjusted console logging structure 
