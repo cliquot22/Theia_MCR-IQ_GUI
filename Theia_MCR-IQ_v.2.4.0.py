@@ -3,7 +3,7 @@
 # contact Mark Peterson at mpeterson@theiatech.com for more information
 
 import PySimpleGUI as sg
-import logging as log
+import logging
 import TheiaMCR
 import serial.tools.list_ports
 import os
@@ -14,15 +14,17 @@ ENABLE_LENS_IQ_FUNCTIONS = False
 if ENABLE_LENS_IQ_FUNCTIONS: import lensIQ_expansion
 
 # revision
-revision = "v.2.2.1"
+revision = "v.2.4.0"
 
 # global variable
 MCR = None
 
+# logging setup
+log = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG, format='%(levelname)-7s ln:%(lineno)-4d %(module)-18s  %(message)s')
+
 def app():
     global MCR
-    # logging setup
-    log.basicConfig(level=log.DEBUG, format='%(levelname)-7s ln:%(lineno)-4d %(module)-18s  %(message)s')
     
     # Find file paths based on development or deployment.  
     def resourcePath(resource):
@@ -42,10 +44,10 @@ def app():
 
     # initialization
     lensFamiliesList = [
-        'TL1250P N#',
-        'TL1250P R#',
-        'TL936P R#',
-        'TL410P R#'
+        'TL1250P Nx',
+        'TL1250P Rx',
+        'TL936P Rx',
+        'TL410P Rx'
     ]
     readyStatus = 'notInit'
     controllerStatusList = {
@@ -65,6 +67,7 @@ def app():
     TheiaMenuIcon = resourcePath('data/TL1250P.ico')
     TheiaColorTheme = 'DefaultNoMoreNagging' #'LightBlue2'
     TheiaLightGreenColor = '#00CC66'
+    TheiaWhiteColor = '#FFFFFF'
     TheiaGreenColor = '#006633'
     TheiaDarkBlueColor = '#333399'
     TheiaLightBlueColor = '#3366CC'
@@ -378,7 +381,7 @@ def app():
         '''
         sg.theme(TheiaColorTheme) 
         sg.set_global_icon(TheiaMenuIcon)
-        sg.set_options(button_color=[TheiaLightGreenColor, TheiaDarkBlueColor])
+        sg.set_options(button_color=[TheiaWhiteColor, TheiaDarkBlueColor])
         # footer frame
         footerFrame = [
             [sg.Text(revision, size=(12,1), font='Helvetica 8'),
@@ -397,13 +400,14 @@ def app():
             ]
         # comPort selection sub-frame
         comPortFrame = [
-            [sg.Text('Com port', size=(10,1)), sg.Combo(sorted(comPortList), default_value=comPort, size=(15,1), enable_events=True, key="cp_port"), 
-                sg.Text('', size=(3,1)), sg.Checkbox('Regard limits', default=True, key='cp_limitCheck', change_submits=True)]
+            [sg.Text('Com port', size=(10,1)), sg.Combo(sorted(comPortList), default_value=comPort, size=(8,1), enable_events=True, key="cp_port"), 
+                sg.Button('Refresh', size=(6,1), key='cp_refresh'),
+                sg.Text('', size=(1,1)), sg.Checkbox('Regard limits', default=True, key='cp_limitCheck', change_submits=True)],
             ]
         # initialize motor control sub-frame
         initMotorsFrame = [
-            [sg.Button('Initialize and home motors', size=(12,2), key='motorInitHomeBtn'),
-                sg.Button('Initialize motors', size=(12,2), key='motorInitBtn'),
+            [sg.Button('Initialize program\nand home motors', size=(14,2), key='motorInitHomeBtn'),
+                sg.Button('Initialize program\nonly', size=(14,2), key='motorInitBtn'),
                 sg.Frame('Status', [[sg.Text('', key='fldStatus', size=(12,1), justification='center')]]) ]
             ]
         # lens header including picture and setup functions
@@ -434,13 +438,13 @@ def app():
             [sg.Button('Iris', size=(12,1), key='moveIrisAbsBtn', disabled=True)],
             ]
         IRCFrame = [
-            [sg.Text('Internal filter (IRC):'), sg.Button('Filter 1 (Visible)', size=(20,1), key='IRCBtn1'), sg.Button('Filter 2 (Visible + IR)', size=(20,1), key='IRCBtn2')]
+            [sg.Text('Internal filter:', size=(12,1)), sg.Button('Filter 1\n(Visible)', size=(11,2), key='IRCBtn1'), sg.Button('Filter 2\n(Visible + IR)', size=(11,2), key='IRCBtn2')]
         ]
         liveControlFrame = []
         liveControlFrame.append([sg.Image(TheiaLogoImagePath), sg.Column(headerFrame)])
         if ENABLE_LENS_IQ_FUNCTIONS:
             lensIQTopFrame, lensIQBottomFrame = IQEP.lensIQGUILayout()
-            liveControlFrame.append([sg.Frame('Lens IQ', lensIQTopFrame, expand_x=True)])
+            liveControlFrame.append([sg.Frame('IQ Lens™', lensIQTopFrame, expand_x=True)])
             liveControlFrame.append([sg.Frame('', lensIQBottomFrame, expand_x=True)])
         liveControlFrame.append([sg.Frame('Relative move', relMoveFrame), sg.Frame('Current', curPosFrame), sg.Frame('Absolute move', absMoveFrame)])
         liveControlFrame.append([sg.Column(IRCFrame)])
@@ -450,7 +454,7 @@ def app():
         layout = [
             [sg.Frame('Motor control', liveControlFrame, expand_x=True)]
             ] 
-        title = 'Theia Lens IQ control' if ENABLE_LENS_IQ_FUNCTIONS else 'Theia MCR IQ control' 
+        title = 'Theia IQ Lens™ control' if ENABLE_LENS_IQ_FUNCTIONS else 'Theia MCR IQ™ control' 
         window = sg.Window(title, layout, finalize=True)
         return window
 
@@ -465,8 +469,7 @@ def app():
         comPort = ''
 
     # default lens setup
-    lastLensFamily = settings.get('lastLensFamily', 'TL1250P N#')
-    lastLensFamilyPrefix, _ = selectLens(lastLensFamily)
+    lastLensFamily = settings.get('lastLensFamily', 'TL1250P Nx')
     
     # create the GUI window
     window = mainGUILayout()
@@ -478,7 +481,7 @@ def app():
     enableLiveFrame(False)
 
     # Lens IQ setup variables
-    if ENABLE_LENS_IQ_FUNCTIONS: IQEP.setup(window, lastLensFamilyPrefix, settings, setStatus)
+    if ENABLE_LENS_IQ_FUNCTIONS: IQEP.setup(window, settings, setStatus)
 
     while (True):
         sourceWindow, event, values = sg.read_all_windows()
@@ -492,7 +495,6 @@ def app():
 
         elif event == 'cp_lensFam':
             lastLensFamily = values['cp_lensFam']
-            lastLensFamilyPrefix, _ = selectLens(lastLensFamily)
             settings['lastLensFamily'] = lastLensFamily
 
         elif event == 'cp_port':
@@ -502,6 +504,11 @@ def app():
             setStatus('notInit')
             enableLiveFrame(False)
             MCRInitialized = False
+
+        elif event == 'cp_refresh':
+            comPortList = searchComPorts()
+            window['cp_port'].update(values=sorted(comPortList))
+            window['cp_port'].update(comPort)
 
         elif event == 'cp_limitCheck':
             setRegardLimits(values['cp_limitCheck'])

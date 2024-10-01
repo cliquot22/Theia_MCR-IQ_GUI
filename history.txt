@@ -1,8 +1,11 @@
-# to do: 
-BFL: compare calibration OD to current OD for other distance units (ft)
-
-
 # Revision history 
+v.2.4.0 241001 added COM port refresh
+    v.2.3.2 240919 (lensIQ) fixed documentation bug: sensor w/h should be w/diag.  
+    v.2.3.1 adjusted console logging structure 
+v.2.3.0 240812 (lensIQ)Formatting adjustments to GUI for production release
+            (lensIQ) removed default calibration data
+    v.2.2.3 240806 (lensIQ) license update
+    v.2.2.2 240522 Bug: changed from STRING_VALUE to ERR_NAN in lens IQ expansion
     v.2.2.1 240305 implemented signed exe
 v.2.2.0 240207 (lensIQ) added sensor diagonal and ratio input
             (lensIQ) Added BFLClass and BFL GUI
