@@ -508,6 +508,7 @@ def app():
         elif event == 'cp_refresh':
             comPortList = searchComPorts()
             window['cp_port'].update(values=sorted(comPortList))
+            comPort = comPortList[-1]
             window['cp_port'].update(comPort)
 
         elif event == 'cp_limitCheck':
