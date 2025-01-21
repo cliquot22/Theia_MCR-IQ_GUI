@@ -15,7 +15,7 @@ Connect the motor control board to the host Windows comptuer with a USB cable.  
 # License
 Theia Technologies [BSD license](https://theiatech.com/Theia_BSD)  
 
-Copyright 2023-2024 Theia Technologies
+Copyright 2023-2025 Theia Technologies
 
 # Contact information
 For more information: 
@@ -25,4 +25,4 @@ or contact Mark Peterson at Theia Technologies
 [mpeterson@theiatech.com](mailto://mpeterson@theiatech.com)
 
 Revision
-v.2.2.1
+v.2.5.0

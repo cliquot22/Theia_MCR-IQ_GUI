@@ -1,4 +1,9 @@
 # Revision history 
+v.2.5.0 250114 moved lens data to a separate LensData.json file in the data folder  
+            (lensIQ) updated/corrected read me file.  
+            (lensIQ) lens family GUI selection will change automatically based on calibrated lens data file family  
+    v.2.4.3 250107 updated PySimpleGUI to licensed version (5.0.8) - bug prevents 'default' and some other themes, changed to LightGrey1 (different than LightGray1)
+    v.2.4.2 241011 udpated for TheiaMCR 2.3.4 (logging reporting update)
     v.2.4.1 241001 added last COM port list number to selected comport field, required adjustment to cp_port and cp_refresh events
 v.2.4.0 241001 added COM port refresh
     v.2.3.2 240919 (lensIQ) fixed documentation bug: sensor w/h should be w/diag.  

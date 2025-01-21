@@ -2,19 +2,23 @@
 # (c) 2024 Theia Technologies LLC
 # contact Mark Peterson at mpeterson@theiatech.com for more information
 
+PySimpleGUI_license = 'ePyqJuMIaWWSNUlqbTnPNUlZVDHqlbw7Z2StIl6oIIklRnpEc83ORey2arWKJb18dhGflzvKbziRIGsYIckgx8ppYD2aVUutcX28VzJLR4CvIq6MMSToczzsNKj9Ip4JMizig300MGSGw4iJTrGolojVZUWs5pzZZZUORkl3cGG7xfvOexWh1glDbanCRrWCZMXrJazYaAWs9yuxIRj4omiwNNSf4PwOICi8wki4Tcm4F4t7ZfUzZtpgcOnnNS0rIxj7o6isTRWBF3ypabyFIssaIqkP5thSbMW3VFMJYTXqNP0FICjVoHiHUKGMVA0uZzXkJJzDbD2Q4fiuLjCdJjDKbm2O1LwVYwWX5g5FIqjUoUifV0G3hHlOahWhEngCV2GQVOjwatG85dviblGm95nQayW1VfzUIkibwKiRQy3gVdzjdaGy9EttZxXXJ7J8RhCUIJ6aINjhUQxCNsz1gbzVI1ifwMiyR7G0F10rZBUklpzica3hVJlkZ4CBIP6tI3j4IZw2MtjAUItBMqDNEbtRMHDSgZiqL5CPJEE3YwXhRJljRmXohmwLavXkJMlXcCyEIH60IAjvIVwSMsjKgmtbMJDQEbtOMcD6QFi5LyCMJIFkbMWPFxpYbVE2FmkwZdHJJdlwcP3CMBiKOLi6JetEcHGEVm0kZBXcJlz0b62O5NAkdTGRhRlSaxWCFy0mZ2WLNmoSLbmEN8vQbTS2IQsQIikJlgQ3QHW7RtkscomnVKzjcDyRI36TIhjBUiwKLnjeEG5BO7CQ4bxKNTz4EiuIMYjrAxxnICna0h=f4750f041c27bde71c9004cdb456dc1898adc4ab4410dd551218bd53f3ecd307ab6df7e1f092b49c19e8ca0b65b8aa8e2aa36295e94b7d931c658e0f2ab69f0c1bfd40f9ceea6a5599afa6ae96af3c9b17e1cea9bcaa5902e362a53202859d6dcdfcbed9c79bfa38020fe52fa48cacffe2f7e42f38f670622f8ba0d61fb743b34dff8ebecf1552d204b41a3be8cb3415358d70213e46745b7a4020f71b635e66aacc3b0c6b70e90c0128da981ba123d5a26700f027b5d3af62647c6b00fea3f8a0c84b78b38bf18302f7ee41659c118d81cf8fe513c5512b52b0bf2ec733bcb29369280e326c61a23f3380bc4557e0ab37424586d05f435c99077a227a1863ac5811443e09184c53a921216021136427f4e9702c4a15a1e1895a24966586c40e6590e82023810e2b7fa8600f91cffefa572aeba702496783bd2b13db4823775889486b6c56793a9bcc3e2f8c520c8a68cdd7c26a9dbd3cc9112e6db4e0e8dccacc70e6694e1f55b14bdcb1acd15b6d714a4cd8cbd08107fc88a998c6c1fcd614b302b92d810fddf81a60ec02f9103f2db67af4856308bae23b5954ba98b7786765d140329090ed0b77e697e81b11ceb74962316e2c8b267f7420b55bb45aabfd234ec582d04e4be9265f2d0ee55ec431b492352952dcd08be82968df04663ec10476577fb5ce6c25c2a3aef25ec54d8207cc34c4749bbe130d86d1ecceabdda4c'
 import PySimpleGUI as sg
 import logging
 import TheiaMCR
 import serial.tools.list_ports
 import os
 import sys
+import json
+from tkinter import Tk
+from tkinter.filedialog import askopenfilename
 
 # lensIQ imports
 ENABLE_LENS_IQ_FUNCTIONS = False
 if ENABLE_LENS_IQ_FUNCTIONS: import lensIQ_expansion
 
 # revision
-revision = "v.2.4.1"
+revision = "v.2.5.0"
 
 # global variable
 MCR = None
@@ -22,6 +26,8 @@ MCR = None
 # logging setup
 log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)-7s ln:%(lineno)-4d %(module)-18s  %(message)s')
+# set TheiaMCR sub module log level
+MCRLogLevel = logging.DEBUG
 
 def app():
     global MCR
@@ -43,12 +49,6 @@ def app():
         return os.path.join(base_path, resource)
 
     # initialization
-    lensFamiliesList = [
-        'TL1250P Nx',
-        'TL1250P Rx',
-        'TL936P Rx',
-        'TL410P Rx'
-    ]
     readyStatus = 'notInit'
     controllerStatusList = {
         'notInit': ('Not initialized','red'),                   # default
@@ -60,12 +60,13 @@ def app():
     }
     settingsFileName = 'Motor control config.json'
     settingsIconPath = resourcePath('data/cog.png')    # location of the gear icon for settings
+    lensDataFileName = 'LensData.json'                  # lens data (names and extents)
     MCRInitialized = False
     absMoveInit = False                                 # set to allow absolute movements (PI home positions known)
     
     TheiaLogoImagePath = resourcePath('data/Theia_logo.png')
     TheiaMenuIcon = resourcePath('data/TL1250P.ico')
-    TheiaColorTheme = 'DefaultNoMoreNagging' #'LightBlue2'
+    TheiaColorTheme = 'LightGrey1'
     TheiaLightGreenColor = '#00CC66'
     TheiaWhiteColor = '#FFFFFF'
     TheiaGreenColor = '#006633'
@@ -74,7 +75,6 @@ def app():
     IRCSelectedColor = TheiaGreenColor                  # color for selected IRC filter
 
     # read the saved settings file
-    # find the settings file
     def readSettingsFile():
         '''
         Read the PySimpleGUI settings file. 
@@ -92,6 +92,32 @@ def app():
             settings['lastLensFamily'] = ''
         settings = sg.UserSettings(filename=settingsFileName, path=appDir, autosave=True)
         return settings
+    
+    # read lens data file
+    def readLensDataFile():
+        '''
+        Read the lens data file from the AppData/local folder.  
+        ### return:  
+        [lens data]
+        '''
+        homeDir = os.path.expanduser("~")
+        appDir = os.path.join(homeDir, 'AppData', 'Local', 'TheiaLensGUI')
+        lensDataFullFileName = f'{appDir}\\{lensDataFileName}'
+        if not os.path.exists(lensDataFullFileName):
+            log.warning(f'No data file in {lensDataFullFileName}')
+            # Open the data file and save to appDir
+            Tk().withdraw() 
+            filename = askopenfilename(defaultextension='.json', filetypes=[('JSON File', '.json')], title="Open lens data file")
+            if filename:
+                with open(filename, 'r') as f:
+                    lensData = json.load(f)
+                with open(lensDataFullFileName, 'w') as f:
+                    json.dump(lensData, f)
+            else: 
+                return None
+        else:
+            lensData = json.load(open(lensDataFullFileName))
+        return lensData
 
     # enbleLiveFrame
     def enableLiveFrame(enable:bool=True, absoluteInit:bool=False) -> bool:
@@ -191,12 +217,12 @@ def app():
         if (MCR.zoom.setMotorSpeed(int(zoomSpeed)) == 0): 
             settings['zoomSpeed'] = int(zoomSpeed)
         else:
-            log.warning(f'Zoom motor speed {focusSpeed} is out of range, not changed')
+            log.warning(f'Zoom motor speed {zoomSpeed} is out of range, not changed')
 
         if (MCR.iris.setMotorSpeed(int(irisSpeed)) == 0): 
             settings['irisSpeed'] = int(irisSpeed)
         else:
-            log.warning(f'Iris motor speed {focusSpeed} is out of range, not changed')
+            log.warning(f'Iris motor speed {irisSpeed} is out of range, not changed')
         return
     
     # serachComPorts
@@ -214,36 +240,45 @@ def app():
         return portList
     
     # setup lens parameters
-    def selectLens(fam:str) -> tuple[int]:
+    def selectLens(name:str) -> tuple[int]:
         '''
         Set up lens parameters focus steps, focus PI step, zoom steps, zoom PI step, iris steps. 
         Based on lens model number, return the configuration and serial number prefix ('TW90').  
         ### input
-        - fam: lens family (see lensFamiliesList variable for names. )
+        - name: lens family name (see lensFamiliesList variable for names. )
         ### return
         [
             prefix = ['TW50' | 'TW60' | 'TW80' | 'TW90' | 'TW46'],
             lensConfig = [zoom steps, zoom PI, focus steps, focus PI, iris steps]
         '''
-        log.info(f"Select {fam}")
-        lensConfig = []
-        prefix = ''
-        if "410P R" in fam:
-            prefix = 'TW50'
-            lensConfig = [4073, 154, 9353, 8652, 75]
-        elif "1250P R" in fam:
-            prefix = 'TW60'
-            lensConfig = [3256, 3147, 8466, 8031, 75]
-        elif "410P N" in fam:
-            prefix = 'TW80'
-            lensConfig = [4017, 136, 9269, 8574, 75]
-        elif "1250P N" in fam:
-            prefix = 'TW90'
-            lensConfig = [3227, 3119, 8390, 7959, 75]
-        elif "936" in fam:
-            prefix = 'TW46'
-            lensConfig = [2994, 2958, 5180, 5128, 75]
+        log.info(f"Select {name}")
+        prefix = lensData[name]['fam']
+        lensConfig = [lensData[name]['zoomSteps'], lensData[name]['zoomPI'], lensData[name]['focusSteps'], lensData[name]['focusPI'], lensData[name]['irisSteps']]
         return prefix, lensConfig
+    
+    # check for a new lens family
+    def checkNewLensFamily(newLensFamily:str) -> str:
+        '''
+        Check if the selected lens family is different from the last lens family.
+        ### input: 
+        - newLensFamily: the new lens family name
+        ### return: 
+        [None | new lens family name]
+        '''
+        if newLensFamily == None:
+            return None
+        
+        if newLensFamily != lastLensFamily:
+            enableLiveFrame(False)
+            enableLiveFrameAbs(False)
+            if ENABLE_LENS_IQ_FUNCTIONS: 
+                IQEP.clearFields()
+                IQEP.enableLiveFrame(False)
+                IQEP.enableSensorFrame(False)
+            setStatus('notInit')
+        else:
+            return None
+        return newLensFamily
         
     # initialize motor controller
     def initMCR(MCRCom:str, lensFam:str='', homeMotors:bool=True, MCRInitialized:bool=True, regardLimits:bool=True) -> bool:
@@ -267,7 +302,7 @@ def app():
             # initialize configuration
             _, lensConfig = selectLens(lensFam)
         if not MCRInitialized: 
-            MCR = TheiaMCR.MCRControl(MCRCom)
+            MCR = TheiaMCR.MCRControl(MCRCom, debugLog=MCRLogLevel)
             if not MCR.MCRInitialized:
                 log.error('** MCR initialization failed')
                 MCR = None
@@ -469,6 +504,11 @@ def app():
         comPort = ''
 
     # default lens setup
+    lensData = readLensDataFile()
+    if lensData == None:
+        sg.popup_ok('Lens data file not found', title='Error')
+        return
+    lensFamiliesList = list(lensData.keys())
     lastLensFamily = settings.get('lastLensFamily', 'TL1250P Nx')
     
     # create the GUI window
@@ -493,9 +533,12 @@ def app():
             else:
                 IQEP.closeWindow(sourceWindow)
 
-        elif event == 'cp_lensFam':
-            lastLensFamily = values['cp_lensFam']
-            settings['lastLensFamily'] = lastLensFamily
+        elif (event == 'cp_lensFam'):
+            newLensFamily = checkNewLensFamily(values['cp_lensFam'])
+            if newLensFamily != None: 
+                lastLensFamily = newLensFamily
+                settings['lastLensFamily'] = lastLensFamily
+                window['calFile'].update('')
 
         elif event == 'cp_port':
             newComPort = values['cp_port']
@@ -537,6 +580,7 @@ def app():
         elif event == 'motorInitHomeBtn':
             if comPort != '':
                 MCRInitialized = initMCR(lensFam=lastLensFamily, MCRCom=comPort, homeMotors=True, MCRInitialized=MCRInitialized, regardLimits=True)
+                if ENABLE_LENS_IQ_FUNCTIONS: IQEP.updateCalibrationFile()
             else:
                 log.error("** Com port is blank")
                 sg.popup_ok('Com port is blank', title='Error')
@@ -575,7 +619,13 @@ def app():
             window['IRCBtn2'].update(button_color=IRCSelectedColor)
             MCR.IRCState(2)
 
-        if ENABLE_LENS_IQ_FUNCTIONS: IQEP.checkEvents(sourceWindow == window, event, values)
+        if ENABLE_LENS_IQ_FUNCTIONS: 
+            lensFamily = IQEP.checkEvents(sourceWindow == window, event, values)
+            newLensFamily = checkNewLensFamily(lensFamily)
+            if newLensFamily != None: 
+                lastLensFamily = newLensFamily
+                settings['lastLensFamily'] = lastLensFamily
+                window['cp_lensFam'].update(lastLensFamily)
 
         if MCRInitialized and event in {'moveWideBtn', 'moveTeleBtn', 'moveNearBtn', 'moveFarBtn', 'moveOpenBtn', 'moveCloseBtn', 'moveZoomAbsBtn', 'moveFocusAbsBtn', 'moveIrisAbsBtn', 'zoomCurFldUpdate', 'focusCurFldUpdate', 'irisCurFldUpdate'}:
             setStatus('moving')
