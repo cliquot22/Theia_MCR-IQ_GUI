@@ -2,7 +2,7 @@
 # (c) 2024 Theia Technologies LLC
 # contact Mark Peterson at mpeterson@theiatech.com for more information
 
-PySimpleGUI_license = 'ePyqJuMIaWWSNUlqbTnPNUlZVDHqlbw7Z2StIl6oIIklRnpEc83ORey2arWKJb18dhGflzvKbziRIGsYIckgx8ppYD2aVUutcX28VzJLR4CvIq6MMSToczzsNKj9Ip4JMizig300MGSGw4iJTrGolojVZUWs5pzZZZUORkl3cGG7xfvOexWh1glDbanCRrWCZMXrJazYaAWs9yuxIRj4omiwNNSf4PwOICi8wki4Tcm4F4t7ZfUzZtpgcOnnNS0rIxj7o6isTRWBF3ypabyFIssaIqkP5thSbMW3VFMJYTXqNP0FICjVoHiHUKGMVA0uZzXkJJzDbD2Q4fiuLjCdJjDKbm2O1LwVYwWX5g5FIqjUoUifV0G3hHlOahWhEngCV2GQVOjwatG85dviblGm95nQayW1VfzUIkibwKiRQy3gVdzjdaGy9EttZxXXJ7J8RhCUIJ6aINjhUQxCNsz1gbzVI1ifwMiyR7G0F10rZBUklpzica3hVJlkZ4CBIP6tI3j4IZw2MtjAUItBMqDNEbtRMHDSgZiqL5CPJEE3YwXhRJljRmXohmwLavXkJMlXcCyEIH60IAjvIVwSMsjKgmtbMJDQEbtOMcD6QFi5LyCMJIFkbMWPFxpYbVE2FmkwZdHJJdlwcP3CMBiKOLi6JetEcHGEVm0kZBXcJlz0b62O5NAkdTGRhRlSaxWCFy0mZ2WLNmoSLbmEN8vQbTS2IQsQIikJlgQ3QHW7RtkscomnVKzjcDyRI36TIhjBUiwKLnjeEG5BO7CQ4bxKNTz4EiuIMYjrAxxnICna0h=f4750f041c27bde71c9004cdb456dc1898adc4ab4410dd551218bd53f3ecd307ab6df7e1f092b49c19e8ca0b65b8aa8e2aa36295e94b7d931c658e0f2ab69f0c1bfd40f9ceea6a5599afa6ae96af3c9b17e1cea9bcaa5902e362a53202859d6dcdfcbed9c79bfa38020fe52fa48cacffe2f7e42f38f670622f8ba0d61fb743b34dff8ebecf1552d204b41a3be8cb3415358d70213e46745b7a4020f71b635e66aacc3b0c6b70e90c0128da981ba123d5a26700f027b5d3af62647c6b00fea3f8a0c84b78b38bf18302f7ee41659c118d81cf8fe513c5512b52b0bf2ec733bcb29369280e326c61a23f3380bc4557e0ab37424586d05f435c99077a227a1863ac5811443e09184c53a921216021136427f4e9702c4a15a1e1895a24966586c40e6590e82023810e2b7fa8600f91cffefa572aeba702496783bd2b13db4823775889486b6c56793a9bcc3e2f8c520c8a68cdd7c26a9dbd3cc9112e6db4e0e8dccacc70e6694e1f55b14bdcb1acd15b6d714a4cd8cbd08107fc88a998c6c1fcd614b302b92d810fddf81a60ec02f9103f2db67af4856308bae23b5954ba98b7786765d140329090ed0b77e697e81b11ceb74962316e2c8b267f7420b55bb45aabfd234ec582d04e4be9265f2d0ee55ec431b492352952dcd08be82968df04663ec10476577fb5ce6c25c2a3aef25ec54d8207cc34c4749bbe130d86d1ecceabdda4c'
+PySimpleGUI_License = 'e2yKJeMaaMWCNAlpbWnQNVlOV1HglYwPZ0SyIq60IjkFRjp1c73LRuyBa6WnJe19dcGClHvEbviEIQsQIXk5xMpLYU20VpuscV2CVaJgR1C0I76gMpT7cbzSOXTXQ23hONTMke4QO9C9wfiYT5G3lxjeZ0Wb5NzkZjU7RIlccLGqx4vxeFWx1rlMbanmRgW3ZxXtJazHaMWq9KuoIIjBoCimNYSO4awYIhitwWiSTLmCFctzZyUJZOp8cfnrNH0JI8jooaicTWWKFky2aZyQIssBI2kZ54h0b2WoVlMFYNXxNJ0ZIoj1oXiZUBG0Vy0BZGXAJrzabh2l4riDLMChJ2DCbl2i1SwwYXWm5U53I5jaoaifV3GjhQltahWAEygjVTGLVNj8a0Gt5rvDbhGk9wnLagWEV9zGIviPwTivQL3FVgz8drGt9ptvZJXhJKJqRmCnIP6xIwjGUzx3NozmgmzDImiEwai1RfGJFK0aZuUEluzjcW3tVuljZZCqIY6nIyjzIOw8MDjTUntHMNDmIMtWMwTGQTi2LVCXJYEHYeX9R2leRGXBh0wUaAXdJgldcryiIN6XIqj8I9wPMgj0gHtYMYDOE2t8M8DKQ9i5LTCbJSF1bdWHFXprbeEWFJkUZbH4JNlVcQ38MciwOPiSJVtvcmGDVP0fZFX4JMzBb02W5xAMdtGmhql5aUWQFH0lZ7WZNhoSLEmSN4vUbESoIhs8InkklhQOQ7WQRek5czm4VIzXcgy6IY6XIKjbUVwALUjPE75fOnCn4Wx1N3zUElugMmjBAbxtIbny0c=g452ac5ba3d6849e21b757df526919074bc1db3eb92d66b5bef1a4d13e16f3188a64cf68e8263102d3d08c8fc19f0d2d72fe10216eaffd30bf802047fc6a68c35bed9e36f10d19b525096cc013f4c715d1db1f4b1cc8daa3817e86aff033fdf984d158ad847d93829cfcc88a06e30e52b87adb91ce46edacbf9913ab8e6b3117d9da7df4fd7a48af9b447bb77906f4c994f62aea818f0a580cfe2cee1758268947bfe8bfbcb9195c5cb18d1aad55ab01c4c3db6ba9e5eb4bebdf407a2f534b29ed87e9ab47c0f454196deaf13a7be9099e7d3c845f74d8f8247d0da04a49bd039101a02c071f44780ac96430d13a92e9a22b088369a7732ddca831296b0902ae9f1848b09ee6ab6aac5a6ce973ead8921fea3ec23c6e4beb0de6e96ecbca23fe8da03c9dc363409c943ef972f12d5c7cfaaa4316401499191da922d2c8c83dd76c17ca9d4e312f70b402753de7129530fbb7c50829bd0d5a3862bbe24a7dbee68640495e8e844a8209bb310ab3baf6c914cb418eb8072d7334c691ec5392173aac4ee20c0cee9d07bba9fe0f501ffc32a9de80d13a7b11304b7a0ec7ae714c3522d0660d96fddacb5295d1adc5a4b008d6517b5f94b979d6992f5d90a4540769110cc012eae2c6680a8ea9ee1d9663d481373a112f4c2763da83f1fb3f106fa33d19ea9629dd900c138e0c4cb3a8bba5fa59a7e8717ea7e1355840259768a5fdb'
 import PySimpleGUI as sg
 import logging
 import TheiaMCR
@@ -18,7 +18,7 @@ ENABLE_LENS_IQ_FUNCTIONS = False
 if ENABLE_LENS_IQ_FUNCTIONS: import lensIQ_expansion
 
 # revision
-revision = "v.2.5.0"
+revision = "v.2.5.3"
 
 # global variable
 MCR = None
@@ -60,7 +60,8 @@ def app():
     }
     settingsFileName = 'Motor control config.json'
     settingsIconPath = resourcePath('data/cog.png')    # location of the gear icon for settings
-    lensDataFileName = 'LensData.json'                  # lens data (names and extents)
+    lensDataFileName = 'limits.json'                   # lens data (names and extents)
+    dataSetQRCode = resourcePath('data/QR-Dropbox-lensIQ-dataset.png')    # QR code for the lens data file
     MCRInitialized = False
     absMoveInit = False                                 # set to allow absolute movements (PI home positions known)
     
@@ -94,20 +95,21 @@ def app():
         return settings
     
     # read lens data file
-    def readLensDataFile():
+    def readLensLimitsFile():
         '''
         Read the lens data file from the AppData/local folder.  
         ### return:  
         [lens data]
         '''
+        lensData = None
         homeDir = os.path.expanduser("~")
-        appDir = os.path.join(homeDir, 'AppData', 'Local', 'TheiaLensGUI')
+        appDir = os.path.join(homeDir, 'AppData', 'Local', 'TheiaLensGUI', 'data')
         lensDataFullFileName = f'{appDir}\\{lensDataFileName}'
         if not os.path.exists(lensDataFullFileName):
-            log.warning(f'No data file in {lensDataFullFileName}')
+            log.warning(f'No data file in {lensDataFullFileName}.  Find the "limits.json" file that contains lens limit values. ')
             # Open the data file and save to appDir
             Tk().withdraw() 
-            filename = askopenfilename(defaultextension='.json', filetypes=[('JSON File', '.json')], title="Open lens data file")
+            filename = askopenfilename(defaultextension='.json', filetypes=[('JSON File', '.json')], title="Open limits.json file")
             if filename:
                 with open(filename, 'r') as f:
                     lensData = json.load(f)
@@ -306,6 +308,7 @@ def app():
             if not MCR.MCRInitialized:
                 log.error('** MCR initialization failed')
                 MCR = None
+                setStatus('error')
                 return False
             window['fldFWRev'].update(f'FW: {MCR.MCRBoard.readFWRevision()}')
             window['fldSNBoard'].update(f'SN: {MCR.MCRBoard.readBoardSN()}')
@@ -376,7 +379,7 @@ def app():
              sg.Radio('I2C', group_id='comGroup', default=(initPath == 'I2C'), key='comI2C', visible=False)]
         ]
         layout = [
-            [sg.Frame('Motor speeds', speedsLayout, expand_x=True)],
+            [sg.Frame('Motor speeds', speedsLayout, expand_x=True)], 
             [sg.Frame('Communication', comLayout)],
             [sg.Button('Save settings', key='save'), sg.Button('Cancel', key='discard')]
         ]
@@ -430,7 +433,7 @@ def app():
         # Live lens motor control section
         # lens family sub-frame
         lensFamFrame = [
-            [sg.Text('Lens family', size=(10,1)), sg.Combo(sorted(lensFamiliesList), default_value=lastLensFamily, size=(15,1), enable_events=True, key='cp_lensFam'), 
+            [sg.Text('Lens family', size=(10,1)), sg.Combo(lensFamiliesList, default_value=lastLensFamily, size=(15,1), enable_events=True, key='cp_lensFam'), 
                 sg.Text('', size=(3,1)), sg.Checkbox('Backlash', default=True, key='cp_backlash', change_submits=True)]
             ]
         # comPort selection sub-frame
@@ -503,8 +506,11 @@ def app():
     if comPort not in comPortList:
         comPort = ''
 
+    # save default files
+    settings['dataSetQRCode'] = dataSetQRCode
+
     # default lens setup
-    lensData = readLensDataFile()
+    lensData = readLensLimitsFile()
     if lensData == None:
         sg.popup_ok('Lens data file not found', title='Error')
         return
@@ -538,7 +544,7 @@ def app():
             if newLensFamily != None: 
                 lastLensFamily = newLensFamily
                 settings['lastLensFamily'] = lastLensFamily
-                window['calFile'].update('')
+                if ENABLE_LENS_IQ_FUNCTIONS: window['calFile'].update('')
 
         elif event == 'cp_port':
             newComPort = values['cp_port']
@@ -580,7 +586,7 @@ def app():
         elif event == 'motorInitHomeBtn':
             if comPort != '':
                 MCRInitialized = initMCR(lensFam=lastLensFamily, MCRCom=comPort, homeMotors=True, MCRInitialized=MCRInitialized, regardLimits=True)
-                if ENABLE_LENS_IQ_FUNCTIONS: IQEP.updateCalibrationFile()
+                if MCRInitialized and ENABLE_LENS_IQ_FUNCTIONS: IQEP.updateCalibrationFile()
             else:
                 log.error("** Com port is blank")
                 sg.popup_ok('Com port is blank', title='Error')

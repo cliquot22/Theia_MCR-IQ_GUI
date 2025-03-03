@@ -38,10 +38,6 @@
    "value": false
   },
   {
-   "optionDest": "embed_manifest",
-   "value": true
-  },
-  {
    "optionDest": "uac_admin",
    "value": false
   },
@@ -58,18 +54,6 @@
    "value": false
   },
   {
-   "optionDest": "win_private_assemblies",
-   "value": false
-  },
-  {
-   "optionDest": "win_no_prefer_redirects",
-   "value": false
-  },
-  {
-   "optionDest": "ascii",
-   "value": false
-  },
-  {
    "optionDest": "datas",
    "value": "C:/Users/mpete/OneDrive - Theia Technologies/Documents/Python/Calibrated_lens_customer_software/Theia_MCR-IQ_GUI/data/Theia_logo.png;."
   },
@@ -80,6 +64,10 @@
   {
    "optionDest": "datas",
    "value": "C:/Users/mpete/OneDrive - Theia Technologies/Documents/Python/Calibrated_lens_customer_software/Theia_MCR-IQ_GUI/data/cog.png;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "C:/Users/mpete/OneDrive - Theia Technologies/Documents/Python/Calibrated_lens_customer_software/Theia_MCR-IQ_GUI/data/limits.json;."
   }
  ],
  "nonPyinstallerOptions": {

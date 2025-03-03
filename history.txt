@@ -1,4 +1,10 @@
 # Revision history 
+    v.2.5.3 250303 bug: (lensIQ) added MCR initialization check (line 583) before IQEP functions
+                (lensIQ) changed LensData.json to limits.json to avoid confusion.  
+                (lensIQ) added format check and popup for lens data file
+    v.2.5.2 250218 bug: PySimpleGUI distribution license correction
+                bug: (Theia_MCR) lens family selection field cleared
+    v.2.5.1 250212 bug: changed lensData.json file location
 v.2.5.0 250114 moved lens data to a separate LensData.json file in the data folder  
             (lensIQ) updated/corrected read me file.  
             (lensIQ) lens family GUI selection will change automatically based on calibrated lens data file family  
