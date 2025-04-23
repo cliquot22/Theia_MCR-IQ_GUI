@@ -1,5 +1,5 @@
 # Live GUI motor control and Lens IQ engineering unit conversion application
-# (c) 2024 Theia Technologies LLC
+# (c) 2025 Theia Technologies LLC
 # contact Mark Peterson at mpeterson@theiatech.com for more information
 
 PySimpleGUI_License = 'e2yKJeMaaMWCNAlpbWnQNVlOV1HglYwPZ0SyIq60IjkFRjp1c73LRuyBa6WnJe19dcGClHvEbviEIQsQIXk5xMpLYU20VpuscV2CVaJgR1C0I76gMpT7cbzSOXTXQ23hONTMke4QO9C9wfiYT5G3lxjeZ0Wb5NzkZjU7RIlccLGqx4vxeFWx1rlMbanmRgW3ZxXtJazHaMWq9KuoIIjBoCimNYSO4awYIhitwWiSTLmCFctzZyUJZOp8cfnrNH0JI8jooaicTWWKFky2aZyQIssBI2kZ54h0b2WoVlMFYNXxNJ0ZIoj1oXiZUBG0Vy0BZGXAJrzabh2l4riDLMChJ2DCbl2i1SwwYXWm5U53I5jaoaifV3GjhQltahWAEygjVTGLVNj8a0Gt5rvDbhGk9wnLagWEV9zGIviPwTivQL3FVgz8drGt9ptvZJXhJKJqRmCnIP6xIwjGUzx3NozmgmzDImiEwai1RfGJFK0aZuUEluzjcW3tVuljZZCqIY6nIyjzIOw8MDjTUntHMNDmIMtWMwTGQTi2LVCXJYEHYeX9R2leRGXBh0wUaAXdJgldcryiIN6XIqj8I9wPMgj0gHtYMYDOE2t8M8DKQ9i5LTCbJSF1bdWHFXprbeEWFJkUZbH4JNlVcQ38MciwOPiSJVtvcmGDVP0fZFX4JMzBb02W5xAMdtGmhql5aUWQFH0lZ7WZNhoSLEmSN4vUbESoIhs8InkklhQOQ7WQRek5czm4VIzXcgy6IY6XIKjbUVwALUjPE75fOnCn4Wx1N3zUElugMmjBAbxtIbny0c=g452ac5ba3d6849e21b757df526919074bc1db3eb92d66b5bef1a4d13e16f3188a64cf68e8263102d3d08c8fc19f0d2d72fe10216eaffd30bf802047fc6a68c35bed9e36f10d19b525096cc013f4c715d1db1f4b1cc8daa3817e86aff033fdf984d158ad847d93829cfcc88a06e30e52b87adb91ce46edacbf9913ab8e6b3117d9da7df4fd7a48af9b447bb77906f4c994f62aea818f0a580cfe2cee1758268947bfe8bfbcb9195c5cb18d1aad55ab01c4c3db6ba9e5eb4bebdf407a2f534b29ed87e9ab47c0f454196deaf13a7be9099e7d3c845f74d8f8247d0da04a49bd039101a02c071f44780ac96430d13a92e9a22b088369a7732ddca831296b0902ae9f1848b09ee6ab6aac5a6ce973ead8921fea3ec23c6e4beb0de6e96ecbca23fe8da03c9dc363409c943ef972f12d5c7cfaaa4316401499191da922d2c8c83dd76c17ca9d4e312f70b402753de7129530fbb7c50829bd0d5a3862bbe24a7dbee68640495e8e844a8209bb310ab3baf6c914cb418eb8072d7334c691ec5392173aac4ee20c0cee9d07bba9fe0f501ffc32a9de80d13a7b11304b7a0ec7ae714c3522d0660d96fddacb5295d1adc5a4b008d6517b5f94b979d6992f5d90a4540769110cc012eae2c6680a8ea9ee1d9663d481373a112f4c2763da83f1fb3f106fa33d19ea9629dd900c138e0c4cb3a8bba5fa59a7e8717ea7e1355840259768a5fdb'
@@ -12,13 +12,18 @@ import sys
 import json
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
+import tomllib
+from pathlib import Path
 
 # lensIQ imports
 ENABLE_LENS_IQ_FUNCTIONS = False
 if ENABLE_LENS_IQ_FUNCTIONS: import lensIQ_expansion
 
-# revision
-revision = "v.2.5.3"
+# cosntants (read revision from pyproject.toml)
+pyprojectPath = Path(__file__).parent / 'pyproject.toml'
+with open(pyprojectPath, 'rb') as f:
+    pyproject = tomllib.load(f)
+    revision = pyproject['project']['version']
 
 # global variable
 MCR = None
@@ -27,7 +32,7 @@ MCR = None
 log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG, format='%(levelname)-7s ln:%(lineno)-4d %(module)-18s  %(message)s')
 # set TheiaMCR sub module log level
-MCRLogLevel = logging.DEBUG
+MCRDebugLogLevel = False
 
 def app():
     global MCR
@@ -304,7 +309,7 @@ def app():
             # initialize configuration
             _, lensConfig = selectLens(lensFam)
         if not MCRInitialized: 
-            MCR = TheiaMCR.MCRControl(MCRCom, debugLog=MCRLogLevel)
+            MCR = TheiaMCR.MCRControl(MCRCom, moduleDebugLevel=MCRDebugLogLevel)
             if not MCR.MCRInitialized:
                 log.error('** MCR initialization failed')
                 MCR = None

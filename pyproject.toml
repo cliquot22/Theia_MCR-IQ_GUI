@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Theia_MCR-IQ_GUI"
+version = "2.5.7"
+authors = [
+  { name="Mark Peterson", email="mpeterson@theiatech.com" },
+]
+description = "Theia IQ lens control GUI"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+  'Development Status :: 5 - Production/Stable',
+  'Intended Audience :: Science/Research',
+  'Intended Audience :: Manufacturing',
+  'Operating System :: Microsoft :: Windows',
+  'Programming Language :: Python :: 3',
+  'Natural Language :: English',
+]
+license = "BSD-3-clause"
+license-files = ["LICENSE"]
+dependencies = [
+  "pySimpleGUI>=5.0.0",
+  "pyserial>=3.0.0",
+  "logging",
+  "numpy",
+  "TheiaMCR>=3.1.5"
+]
+
+[project.urls]
+Homepage = "https://github.com/cliquot22/Theia_MCR-IQ_GUI"
+Documentation = "https://github.com/cliquot22/Theia_MCR-IQ_GUI/wiki"
+Issues = "https://github.com/cliquot22/Theia_MCR-IQ_GUI/issues"

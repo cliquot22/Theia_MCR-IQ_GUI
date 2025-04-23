@@ -1,4 +1,11 @@
 # Revision history 
+    v.2.5.7 250422 updated TheiaMCR module to 3.1.5
+                (lensIQ) Added new specific covered lens models to license
+                Added pyproject.toml file
+                (lensIQ) bug: check for loaded data before resetting sensor diagonal
+    v.2.5.6 250414 removed depricated typing module.  Requires Python >3.10
+    v.2.5.5 250311 (line 30) changed MCR debug log level parameter
+    v.2.5.4 250306 updated TheiaMCR module to 2.5.0
     v.2.5.3 250303 bug: (lensIQ) added MCR initialization check (line 583) before IQEP functions
                 (lensIQ) changed LensData.json to limits.json to avoid confusion.  
                 (lensIQ) added format check and popup for lens data file

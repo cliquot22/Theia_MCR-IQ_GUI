@@ -68,6 +68,10 @@
   {
    "optionDest": "datas",
    "value": "C:/Users/mpete/OneDrive - Theia Technologies/Documents/Python/Calibrated_lens_customer_software/Theia_MCR-IQ_GUI/data/limits.json;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "C:/Users/mpete/OneDrive - Theia Technologies/Documents/Python/Calibrated_lens_customer_software/Theia_MCR-IQ_GUI/pyproject.toml;."
   }
  ],
  "nonPyinstallerOptions": {
