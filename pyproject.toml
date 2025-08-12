@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "Theia_MCR-IQ_GUI"
-version = "2.5.7"
+version = "2.6.1"
 authors = [
   { name="Mark Peterson", email="mpeterson@theiatech.com" },
 ]

@@ -1,4 +1,7 @@
 # Revision history 
+    v.2.6.1 250812 moved MCR out of GUI_actions
+v.2.6.0 250811 Separated main module into classes for easier maintenance 
+                Created GUI_actions, GUI_setup, PSG_license, read_settings_files, and utilities
     v.2.5.7 250422 updated TheiaMCR module to 3.1.5
                 (lensIQ) Added new specific covered lens models to license
                 Added pyproject.toml file
