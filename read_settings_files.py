@@ -49,6 +49,7 @@ def readLensLimitsFile(lensDataFileName:str) -> dict:
         if filename:
             with open(filename, 'r') as f:
                 lensData = json.load(f)
+            os.makedirs(appDir, exist_ok=True)
             with open(lensDataFullFileName, 'w') as f:
                 json.dump(lensData, f)
         else: 
