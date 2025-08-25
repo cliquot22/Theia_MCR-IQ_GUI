@@ -62,14 +62,12 @@ class LensIQGUI:
         # Live lens motor control section
         # lens family sub-frame
         lensFamFrame = [
-            [sg.Text('Lens family', size=(10,1)), sg.Combo('', default_value='', size=(15,1), enable_events=True, key='cp_lensFam'), 
-                sg.Text('', size=(3,1)), sg.Checkbox('Backlash', default=True, key='cp_backlash', change_submits=True)]
+            [sg.Text('Lens family', size=(10,1)), sg.Combo([], size=(18,10), enable_events=True, key='cp_lensFam')]
             ]
         # comPort selection sub-frame
         comPortFrame = [
-            [sg.Text('Com port', size=(10,1)), sg.Combo('', default_value='', size=(8,1), enable_events=True, key="cp_port"), 
-                sg.Button('Refresh', size=(6,1), key='cp_refresh'),
-                sg.Text('', size=(1,1)), sg.Checkbox('Regard limits', default=True, key='cp_limitCheck', change_submits=True)],
+            [sg.Text('Com port', size=(10,1)), sg.Combo([], size=(18,10), enable_events=True, key="cp_port"), 
+                sg.Button('Refresh', size=(6,1), key='cp_refresh')],
             ]
         # initialize motor control sub-frame
         initMotorsFrame = [
@@ -131,7 +129,7 @@ class LensIQGUI:
         return self.window
 
     # setting window 
-    def settingsGUI(self, initialProtocol:str, MCR) -> dict | None:
+    def settingsGUI(self, initialProtocol:str, MCR, GUIActions) -> dict | None:
         '''
         Create a window for additional settings.  This function handles the window and returns the values once it is closed.  
         This window includes communication path and motor speeds.  
@@ -140,6 +138,7 @@ class LensIQGUI:
         ### input:
         - initialProtocol: current communication path string ('USB', 'UART', 'I2C')
         - MCR: the handle to the MCR module
+        - GUIActions: the handle to the GUI actions module
         ### return: 
         [settings values | None]
         '''
@@ -150,9 +149,10 @@ class LensIQGUI:
 
         # motor speeds
         speedsLayout = [
-            [sg.Text('Focus motor speed', expand_x=True), sg.Input('', size=(15,1), key='focusSpeed', disabled=True)],
-            [sg.Text('Zoom motor speed', expand_x=True), sg.Input('', size=(15,1), key='zoomSpeed', disabled=True)],
-            [sg.Text('Iris motor speed', expand_x=True), sg.Input('', size=(15,1), key='irisSpeed', disabled=True)],
+            [sg.Text('', size=(16,1)), sg.Text('Moving', size=(7,1)), sg.Text('Homing', size=(7,1))],
+            [sg.Text('Focus motor speed', size=(16,1)), sg.Input('', size=(7,1), key='focusSpeed', disabled=True), sg.Input('', size=(7,1), key='focusHomeSpeed', disabled=True)],
+            [sg.Text('Zoom motor speed', size=(16,1)), sg.Input('', size=(7,1), key='zoomSpeed', disabled=True), sg.Input('', size=(7,1), key='zoomHomeSpeed', disabled=True)],
+            [sg.Text('Iris motor speed', size=(16,1)), sg.Input('', size=(7,1), key='irisSpeed', disabled=True), sg.Input('', size=(7,1), key='irisHomeSpeed', disabled=True)],
         ]
         # communication path
         comLayout = [
@@ -163,8 +163,15 @@ class LensIQGUI:
                 sg.Radio('UART', group_id='comGroup', default=(initialProtocol == 'UART'), key='comUART', visible=False), 
                 sg.Radio('I2C', group_id='comGroup', default=(initialProtocol == 'I2C'), key='comI2C', visible=False)]
         ]
+        # additional settings
+        addLayout = [
+            [sg.Checkbox('Backlash', default=True, key='cp_backlash')],
+            [sg.Checkbox('Regard limits', default=True, key='cp_limitCheck')],
+            [sg.Checkbox('Slow home approach', key='slowHome', default=True)]
+        ]
         layout = [
             [sg.Frame('Motor speeds', speedsLayout, expand_x=True)], 
+            [sg.Frame('Additional settings', addLayout)],
             [sg.Frame('Communication', comLayout)],
             [sg.Button('Save settings', key='save'), sg.Button('Cancel', key='discard')]
         ]
@@ -173,10 +180,19 @@ class LensIQGUI:
         if MCR.MCRInitialized:
             window['focusSpeed'].update(MCR.focus.currentSpeed)
             window['focusSpeed'].update(disabled=False)
+            window['focusHomeSpeed'].update(MCR.focus.homingSpeed)
+            window['focusHomeSpeed'].update(disabled=False)
             window['zoomSpeed'].update(MCR.zoom.currentSpeed)
             window['zoomSpeed'].update(disabled=False)
+            window['zoomHomeSpeed'].update(MCR.zoom.homingSpeed)
+            window['zoomHomeSpeed'].update(disabled=False)
             window['irisSpeed'].update(MCR.iris.currentSpeed)
             window['irisSpeed'].update(disabled=False)
+            window['irisHomeSpeed'].update(MCR.iris.homingSpeed)
+            window['irisHomeSpeed'].update(disabled=False)
+            window['slowHome'].update(MCR.focus.slowHomeApproach)
+            window['cp_backlash'].update(GUIActions.regardBacklash)
+            window['cp_limitCheck'].update(GUIActions.regardLimits)
 
         while True:
             event, values = window.read()

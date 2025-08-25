@@ -1,4 +1,6 @@
 # Revision history 
+v.2.7.0 250825 added slowHomeApproach to settings window 
+                moved backlash and regard limits to settings window 
     v.2.6.2 250825 bug (read_settings_files): make sure the AppData/local/TheiaLensGUI/data folder exists before writing to it. 
     v.2.6.1 250812 moved MCR out of GUI_actions
 v.2.6.0 250811 Separated main module into classes for easier maintenance 

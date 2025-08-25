@@ -42,10 +42,8 @@ def createMainGUI():
     mainGUI = GUI_setup.LensIQGUI(settingsIconPath=settingsIconPath, IQFunctions=IQEP if ENABLE_LENS_IQ_FUNCTIONS else None)
 
     # field updates
-    mainGUI.window['cp_lensFam'].update(values = lensFamiliesList)
-    mainGUI.window['cp_lensFam'].update(value = lastLensFamily)
-    mainGUI.window['cp_port'].update(values = sorted(comPortList))
-    mainGUI.window['cp_port'].update(value = comPort)
+    mainGUI.window['cp_lensFam'].update(value = lastLensFamily, values = lensFamiliesList, size=(18,10))
+    mainGUI.window['cp_port'].update(value = comPort, values = sorted(comPortList), size=(18,10))
 
     actions = GUI_actions.GUIActions(mainGUI) 
     actions.setStatus('notInit')
@@ -130,14 +128,15 @@ def initMCR(MCRCom:str, lensFam:str='', homeMotors:bool=True, regardLimits:bool=
     mainGUI.window['IRCBtn1'].update(button_color=mainGUI.IRCSelectedColor)
     # set initial motor speeds
     setMotorSpeeds(settings.get('focusSpeed', 1000), settings.get('zoomSpeed', 1000), settings.get('irisSpeed', 100))
+    setHomeSpeeds(settings.get('focusHomingSpeed', 1000), settings.get('zoomHomingSpeed', 1000), settings.get('irisHomingSpeed', 100))
+    MCR.focus.slowHomeApproach = slowHomeApproach
+    MCR.zoom.slowHomeApproach = slowHomeApproach
 
     # initialize GUI settings
     actions.setRegardLimits(regardLimits)
     MCR.focus.setRespectLimits(regardLimits)
     MCR.zoom.setRespectLimits(regardLimits)
-    mainGUI.window['cp_limitCheck'].update(actions.regardLimits)
-    actions.regardBacklash = actions.setRegardBacklash(True)
-    mainGUI.window['cp_backlash'].update(actions.regardBacklash)
+    actions.setRegardBacklash(True)
     actions.enableLiveFrame(True, absoluteInit=homeMotors)
 
     if ENABLE_LENS_IQ_FUNCTIONS: IQEP.initMotors(MCR, enableFields=actions.regardLimits)
@@ -176,6 +175,58 @@ def setMotorSpeeds(focusSpeed:int=1000, zoomSpeed:int=1000, irisSpeed:int=100):
         log.warning(f'Iris motor speed {irisSpeed} is out of range, not changed')
     return
 
+# set motor homing speeds
+def setHomeSpeeds(focusSpeed:int=1000, zoomSpeed:int=1000, irisSpeed:int=100):
+    '''
+    Set the motor homing speeds.  Speeds are saved in the local settings file (not stored in control board EEPROM)
+    ### input: 
+    - focusSpeed (optional: 1000): focus motor pps speed
+    - zoomSpeed (optional: 1000): zoom motor pps speed
+    - irisSpeed (optional: 100): iris motor pps speed
+    '''
+    if (MCR.focus.setHomingSpeed(int(focusSpeed)) == 0): 
+        settings['focusHomingSpeed'] = int(focusSpeed)
+    else:
+        log.warning(f'Focus motor speed {focusSpeed} is out of range, not changed')
+
+    if (MCR.zoom.setHomingSpeed(int(zoomSpeed)) == 0): 
+        settings['zoomHomingSpeed'] = int(zoomSpeed)
+    else:
+        log.warning(f'Zoom motor speed {zoomSpeed} is out of range, not changed')
+
+    if (MCR.iris.setHomingSpeed(int(irisSpeed)) == 0): 
+        settings['irisHomingSpeed'] = int(irisSpeed)
+    else:
+        log.warning(f'Iris motor speed {irisSpeed} is out of range, not changed')
+    return
+
+# handle settings values
+def handleSettingsValues(values:dict):
+    '''
+    Respond to the values in the settings window. 
+    '''
+    if values['focusSpeed'] != '' or values['zoomSpeed'] != '' or values['irisSpeed'] != '':
+        setMotorSpeeds(values['focusSpeed'], values['zoomSpeed'], values['irisSpeed'])
+
+    if values['focusHomeSpeed'] != '' or values['zoomHomeSpeed'] != '' or values['irisHomeSpeed'] != '':
+        setHomeSpeeds(values['focusHomeSpeed'], values['zoomHomeSpeed'], values['irisHomeSpeed'])
+
+    if values['slowHome'] != None:
+        slowHomeApproach = values['slowHome']
+        MCR.focus.slowHomeApproach = slowHomeApproach
+        MCR.zoom.slowHomeApproach = slowHomeApproach
+        settings['slowHome'] = slowHomeApproach
+
+    if values['cp_limitCheck'] != None:
+        state = values['cp_limitCheck']
+        actions.setRegardLimits(state)
+        if MCR:
+            MCR.focus.setRespectLimits(state)
+            MCR.zoom.setRespectLimits(state)
+
+    if values['cp_backlash'] != None:
+        actions.setRegardBacklash(values['cp_backlash'])
+
 ##################################################
 ### main application routine 
 ##################################################
@@ -196,6 +247,7 @@ if lensData == None:
     sys.exit(1)
 lensFamiliesList = list(lensData.keys())
 lastLensFamily = settings.get('lastLensFamily', 'TL1250P Nx')
+slowHomeApproach = settings.get('slowHome', True)
 
 # create the GUI window
 actions = createMainGUI()
@@ -231,7 +283,6 @@ while (True):
 
     elif event == 'cp_refresh':
         newComPortList = utilities.searchComPorts()
-        mainGUI.window['cp_port'].update(values=sorted(newComPortList))
         if comPort not in newComPortList:
             # previously selected comPort no longer available, choose the last one in the new list
             comPort = newComPortList[-1] if len(newComPortList) >= 1 else ''
@@ -240,17 +291,7 @@ while (True):
             # cancel motor initialization status
             actions.setStatus('notInit')
             actions.enableLiveFrame(False)
-        mainGUI.window['cp_port'].update(comPort)
-
-    elif event == 'cp_limitCheck':
-        state = values['cp_limitCheck']
-        actions.setRegardLimits(state)
-        if MCR:
-            MCR.focus.setRespectLimits(state)
-            MCR.zoom.setRespectLimits(state)
-
-    elif event == 'cp_backlash':
-        actions.setRegardBacklash(values['cp_backlash'])
+        mainGUI.window['cp_port'].update(value=comPort, values=sorted(newComPortList), size=(18,10))
 
     elif event == 'motorInitBtn':
         if comPort != '':
@@ -269,10 +310,10 @@ while (True):
 
     elif event == 'settingsPopup':
         # open the settings popup window.  The communication path for this program will always be 'USB'.  
-        settingsValues = mainGUI.settingsGUI('USB', MCR)
+        settingsValues = mainGUI.settingsGUI('USB', MCR, actions)
         if settingsValues != None:
-            if settingsValues['focusSpeed'] != '' or settingsValues['zoomSpeed'] != '' or settingsValues['irisSpeed'] != '':
-                setMotorSpeeds(settingsValues['focusSpeed'], settingsValues['zoomSpeed'], settingsValues['irisSpeed'])
+            handleSettingsValues(settingsValues)
+
             if settingsValues['comUART'] or settingsValues['comI2C']:
                 # communications path was set to something else and USB is no longer available. 
                 if comPort == '':
